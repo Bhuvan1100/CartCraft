@@ -16,3 +16,8 @@ The frontend is responsible for user interaction and communicates with the backe
 
 ## 📂 Project Structure
 
+
+## Git Commands
+ - git branch
+ - git switch frontend
+ - git push origin frontend
