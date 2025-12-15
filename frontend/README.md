@@ -10,7 +10,7 @@ The frontend is responsible for user interaction and communicates with the backe
 - React.js
 - JavaScript / TypeScript
 - Tailwind CSS
-- Axios / Fetch API
+
 
 ---
 
