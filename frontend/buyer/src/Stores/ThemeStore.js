@@ -9,7 +9,7 @@ const useThemeStore = create(
         set((state) => ({ darkMode: !state.darkMode })),
     }),
     {
-      name: "theme-storage", // key in localStorage
+      name: "theme-storage",
     }
   )
 )
