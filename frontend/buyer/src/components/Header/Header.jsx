@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react"; // <-- added useRef and useEffect
 import {
     MagnifyingGlassIcon,
     UserIcon,
@@ -55,10 +55,36 @@ const NavLinkLight = ({ to, children }) => (
 const Header = () => {
     const { darkMode, toggleDarkMode } = useThemeStore();
     const [searchOpen, setSearchOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const navigate = useNavigate();
+    const menuRef = useRef(null); // <-- added ref
+
+    // Check if user is authenticated (you can replace this with your actual auth logic)
+    const isAuthenticated = false; // Change this based on your auth state
+
+    const handleUserIconClick = () => {
+        setUserMenuOpen(!userMenuOpen);
+    };
+
+    // <-- Added outside click handler
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setUserMenuOpen(false);
+            }
+        };
+
+        if (userMenuOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [userMenuOpen]);
 
     return (
-        <div>
+        <div className="sticky top-0 z-50">
             <SearchBar
                 isOpen={searchOpen}
                 onClose={() => setSearchOpen(false)}
@@ -104,9 +130,53 @@ const Header = () => {
                                 <MagnifyingGlassIcon className="h-6 w-6 cursor-pointer" />
                             </IconButtonDark>
 
-                            <IconButtonDark>
-                                <UserIcon className="h-6 w-6 cursor-pointer" />
-                            </IconButtonDark>
+                            <div className="relative" ref={menuRef}>
+                                <IconButtonDark onClick={handleUserIconClick}>
+                                    <UserIcon className="h-6 w-6 cursor-pointer" />
+                                </IconButtonDark>
+                                
+                                {userMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg py-2">
+                                        {!isAuthenticated ? (
+                                            <>
+                                                <button
+                                                    onClick={() => { navigate("/login"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800"
+                                                >
+                                                    Login
+                                                </button>
+                                                <button
+                                                    onClick={() => { navigate("/register"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800"
+                                                >
+                                                    Register
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => { navigate("/orders"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800"
+                                                >
+                                                    Previous Orders
+                                                </button>
+                                                <button
+                                                    onClick={() => { navigate("/profile"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800"
+                                                >
+                                                    Your Details
+                                                </button>
+                                                <button
+                                                    onClick={() => { /* Add logout logic */ setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-gray-800"
+                                                >
+                                                    Logout
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             <IconButtonDark>
                                 <div className="relative">
@@ -165,9 +235,53 @@ const Header = () => {
                                 <MagnifyingGlassIcon className="h-6 w-6 cursor-pointer" />
                             </IconButtonLight>
 
-                            <IconButtonLight>
-                                <UserIcon className="h-6 w-6 cursor-pointer" />
-                            </IconButtonLight>
+                            <div className="relative" ref={menuRef}>
+                                <IconButtonLight onClick={handleUserIconClick}>
+                                    <UserIcon className="h-6 w-6 cursor-pointer" />
+                                </IconButtonLight>
+                                
+                                {userMenuOpen && (
+                                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2">
+                                        {!isAuthenticated ? (
+                                            <>
+                                                <button
+                                                    onClick={() => { navigate("/login"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                                >
+                                                    Login
+                                                </button>
+                                                <button
+                                                    onClick={() => { navigate("/register"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                                >
+                                                    Register
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    onClick={() => { navigate("/orders"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                                >
+                                                    Previous Orders
+                                                </button>
+                                                <button
+                                                    onClick={() => { navigate("/profile"); setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                                >
+                                                    Your Details
+                                                </button>
+                                                <button
+                                                    onClick={() => { /* Add logout logic */ setUserMenuOpen(false); }}
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                                >
+                                                    Logout
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
 
                             <IconButtonLight>
                                 <div className="relative">

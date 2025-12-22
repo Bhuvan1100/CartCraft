@@ -3,6 +3,8 @@ import SearchBar from './components/SearchBar/SearchBar'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoadingSpinner from './components/Spinner/Spinner';
 import SignupPage from './components/SignUp/Signup';
+import LoginPage from './components/Signin/Login';
+import Hero from './components/HeroSection/HeroSection';
 
 function App() {
 
@@ -12,7 +14,9 @@ function App() {
       <BrowserRouter>
       <Header />
         <Routes>
-          <Route path="/" element={<SignupPage/>} />
+          <Route path="/register" element={<SignupPage/>} />
+          <Route path="/" element={<Hero/>} />
+          <Route path="/login" element={<LoginPage/>} />
         </Routes>
       </BrowserRouter>
     </>
