@@ -8,6 +8,7 @@ import {
 } from "@heroicons/react/24/outline";
 import useThemeStore from "../../Stores/ThemeStore";
 import SearchBar from "../SearchBar/SearchBar";
+import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
 
 /* ===== DO NOT CHANGED (AS REQUESTED) ===== */
@@ -58,9 +59,9 @@ const Header = () => {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const navigate = useNavigate();
     const menuRef = useRef(null); // <-- added ref
-
+    const user = auth.currentUser
     // Check if user is authenticated (you can replace this with your actual auth logic)
-    const isAuthenticated = false; // Change this based on your auth state
+    const isAuthenticated = (user && user.emailVerified); // Change this based on your auth state
 
     const handleUserIconClick = () => {
         setUserMenuOpen(!userMenuOpen);

@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   updateProfile
 } from 'firebase/auth';
+import { sendEmailVerification } from "firebase/auth";
 import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
 import useThemeStore from '../../Stores/ThemeStore';
@@ -14,6 +15,7 @@ import useThemeStore from '../../Stores/ThemeStore';
 const googleProvider = new GoogleAuthProvider();
 
 export default function SignupPage() {
+  const navigate = useNavigate();
   const { darkMode } = useThemeStore();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,11 @@ export default function SignupPage() {
         formData.email,
         formData.password
       );
+      const user = userCredential.user;
+
+      await sendEmailVerification(user);
+
+      navigate('/verify-email');
       setSuccessMessage(`Account created successfully.`);
       setFormData({ email: '', password: '' });
       console.log('User created:', userCredential.user);
