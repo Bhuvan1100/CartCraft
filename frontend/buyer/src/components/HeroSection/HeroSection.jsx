@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import useThemeStore from '../../Stores/ThemeStore';
+import ProductCard from '../Cards/Card';
+import TrendyProductsSection from '../Trendy/Tredny';
 
 // Lazy load image component with intersection observer
 const LazyImage = ({ blur, full, alt, className, overlayStyles, children }) => {
@@ -36,9 +38,8 @@ const LazyImage = ({ blur, full, alt, className, overlayStyles, children }) => {
       <img
         src={currentSrc}
         alt={alt}
-        className={`absolute inset-0 w-full h-full object-cover transition duration-500 ease-out ${
-          !isLoaded ? 'blur-[0.5px] opacity-80' : 'blur-0 opacity-100'
-        }`}
+        className={`absolute inset-0 w-full h-full object-cover transition duration-500 ease-out ${!isLoaded ? 'blur-[0.5px] opacity-80' : 'blur-0 opacity-100'
+          }`}
       />
       <div className={overlayStyles} />
       {children}
@@ -104,23 +105,24 @@ export default function CollectionsPage() {
     </Link>
   );
 
-  return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
+return (
+  <>
+    <div className={`h-auto mb-10 ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
       <div className="max-w-7xl mx-auto px-12 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CollectionCard 
-            collection={collections.women} 
+          <CollectionCard
+            collection={collections.women}
             height="h-112.5"
           />
           <div className="flex flex-col gap-6">
-            <CollectionCard 
-              collection={collections.men} 
+            <CollectionCard
+              collection={collections.men}
               height="h-53"
               bottomSpacing="bottom-8"
               leftSpacing="left-8"
             />
-            <CollectionCard 
-              collection={collections.kids} 
+            <CollectionCard
+              collection={collections.kids}
               height="h-53"
               bottomSpacing="bottom-8"
               leftSpacing="left-8"
@@ -129,5 +131,9 @@ export default function CollectionsPage() {
         </div>
       </div>
     </div>
-  );
+    <div className=''>
+    <TrendyProductsSection/>
+    </div>
+  </>
+);
 }
