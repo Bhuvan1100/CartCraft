@@ -6,6 +6,7 @@ import SignupPage from './components/SignUp/Signup';
 import LoginPage from './components/Signin/Login';
 import Hero from './components/HeroSection/HeroSection';
 import EmailVerification from './components/SignUp/Emailverification';
+import Mainmarket from './components/Shop/Mainmarket';
 
 function App() {
 
@@ -15,10 +16,12 @@ function App() {
       <BrowserRouter>
       <Header />
         <Routes>
-          <Route path="/register" element={<SignupPage/>} />
+          {/* <Route path="/register" element={<SignupPage/>} />
           <Route path="/" element={<Hero/>} />
           <Route path="/login" element={<LoginPage/>} />
-          <Route path="/verify-email" element={<EmailVerification/>} />
+          <Route path="/verify-email" element={<EmailVerification/>} /> */}
+
+          <Route path="/" element={<Mainmarket/>} />
         </Routes>
       </BrowserRouter>
     </>
