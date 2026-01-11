@@ -7,6 +7,11 @@ import LoginPage from './components/Signin/Login';
 import Hero from './components/HeroSection/HeroSection';
 import EmailVerification from './components/SignUp/Emailverification';
 import Mainmarket from './components/Shop/Mainmarket';
+import MensCollection from './components/Collections/MensCollection';
+import WomensCollections from './components/Collections/WomensCollection';
+import KidsCollections from './components/Collections/KidsCollection';
+import ShopPage from './components/Shop/ShopPage';
+import Footer from './components/Footer/Footer';
 
 function App() {
 
@@ -21,8 +26,10 @@ function App() {
           <Route path="/login" element={<LoginPage/>} />
           <Route path="/verify-email" element={<EmailVerification/>} /> */}
 
-          <Route path="/" element={<Mainmarket/>} />
+          {/* <Route path="/" element={<Mainmarket/>} /> */}
+            <Route path="/" element={<ShopPage/>} />
         </Routes>
+        <Footer/>
       </BrowserRouter>
     </>
   )
