@@ -1,7 +1,7 @@
 import React from "react";
 import CategoryCard from "../Cards/Card1";
 
-const MoreOptions = ({ name }) => {
+const MoreOptions = ({ name="" }) => {
   const categories = {
     Kids: {
       image: "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=600&q=80",
@@ -33,12 +33,12 @@ const MoreOptions = ({ name }) => {
   };
 
   return (
-    <div className="w-1/2 max-w-6xl mx-auto px-6 py-12">
+    <div className="w-2/3 max-w-6xl mx-auto px-6 py-12">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">
         Explore More Collections
       </h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
         {otherCategories.map((key) => {
           const data = categories[key];
           return (

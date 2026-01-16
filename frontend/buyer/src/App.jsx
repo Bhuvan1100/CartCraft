@@ -12,12 +12,15 @@ import WomensCollections from './components/Collections/WomensCollection';
 import KidsCollections from './components/Collections/KidsCollection';
 import ShopPage from './components/Shop/ShopPage';
 import Footer from './components/Footer/Footer';
+import ProductPage from './components/Shop/ProductPage';
+import { Toaster } from 'sonner';
 
 function App() {
 
   return (
     
     <>
+      <Toaster richColors position="top-right" />
       <BrowserRouter>
       <Header />
         <Routes>
@@ -27,7 +30,8 @@ function App() {
           <Route path="/verify-email" element={<EmailVerification/>} /> */}
 
           {/* <Route path="/" element={<Mainmarket/>} /> */}
-            <Route path="/" element={<ShopPage/>} />
+            {/* <Route path="/" element={<ShopPage/>} /> */}
+            <Route path="/" element={<ProductPage/>} />
         </Routes>
         <Footer/>
       </BrowserRouter>

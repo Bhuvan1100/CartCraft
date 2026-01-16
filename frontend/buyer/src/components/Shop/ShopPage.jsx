@@ -340,7 +340,7 @@ const ShopPage = ({ heading = "Shop Collection", productData }) => {
         maxPageNumbers={5}
         scrollRef={headingRef}
       />
-      {/* <MoreOptions name={firstWord} /> */}
+      <MoreOptions />
     </div>
   );
 };
