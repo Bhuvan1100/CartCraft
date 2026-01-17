@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { ShoppingCartIcon, StarIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
+import ProductInfo from './ProductInfo';
+import SimilarProducts from './SimilarProducts';
+import { useNavigate } from 'react-router-dom'
 
 export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const navigate = useNavigate();
 
   const product = {
     name: "Premium Wireless Headphones",
@@ -38,19 +42,44 @@ export default function ProductPage() {
   };
 
   const addToCart = () => {
-    toast.success("Added to cart")
+    toast(
+      <div className="flex items-center justify-between gap-4 mt-3 w-full px-5 py-3 bg-white border border-gray-200 rounded-md shadow-md">
+        <div>
+          <p className="font-semibold text-base text-gray-900">
+            ✅ Added to cart
+          </p>
+          <p className="text-sm text-gray-500">
+            Item ready for checkout
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate("/cart")}
+          className="px-4 py-2 ml-2 text-sm font-semibold text-white bg-black rounded-lg cursor-pointer hover:bg-gray-900 transition"
+        >
+          Go to cart
+        </button>
+      </div>,
+      {
+        duration: 4000,
+        unstyled: true,
+      }
+    );
+
     setQuantity(1);
   };
+
+
 
   const renderStars = (rating) => {
     return [...Array(5)].map((_, index) => (
       <StarIcon
         key={index}
         className={`w-5 h-5 ${index < Math.floor(rating)
-            ? 'text-yellow-400'
-            : index < rating
-              ? 'text-yellow-400 opacity-50'
-              : 'text-gray-300'
+          ? 'text-yellow-400'
+          : index < rating
+            ? 'text-yellow-400 opacity-50'
+            : 'text-gray-300'
           }`}
       />
     ));
@@ -72,8 +101,8 @@ export default function ProductPage() {
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
-                          ? 'border-blue-500'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <img
@@ -174,21 +203,23 @@ export default function ProductPage() {
                       <PlusIcon className="w-4 h-4 text-gray-600" />
                     </button>
                   </div>
-                    <button
-                      onClick={addToCart}
-                      className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
-                    >
-                      <ShoppingCartIcon className="w-5 h-5" />
-                      Add to Cart
-                    </button>
+                  <button
+                    onClick={addToCart}
+                    className="w-full bg-black hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <ShoppingCartIcon className="w-5 h-5" />
+                    Add to Cart
+                  </button>
                 </div>
               </div>
-
-              {/* Add to Cart Button */}
             </div>
           </div>
         </div>
       </div>
+      <div className='m-15'>
+      <ProductInfo/>
+      </div>
+      <SimilarProducts/>
     </div>
   );
 }
