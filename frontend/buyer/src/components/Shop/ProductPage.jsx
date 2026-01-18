@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import ProductInfo from './ProductInfo';
 import SimilarProducts from './SimilarProducts';
 import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom';
 
 export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
@@ -216,7 +217,7 @@ export default function ProductPage() {
           </div>
         </div>
       </div>
-      <div className='m-15'>
+      <div className='m-10'>
       <ProductInfo/>
       </div>
       <SimilarProducts/>

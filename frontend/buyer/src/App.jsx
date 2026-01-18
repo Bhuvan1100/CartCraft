@@ -2,18 +2,18 @@ import Header from './components/Header/Header'
 import SearchBar from './components/SearchBar/SearchBar'
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoadingSpinner from './components/Spinner/Spinner';
-import SignupPage from './components/SignUp/Signup';
-import LoginPage from './components/Signin/Login';
-import Hero from './components/HeroSection/HeroSection';
-import EmailVerification from './components/SignUp/Emailverification';
-import Mainmarket from './components/Shop/Mainmarket';
-import MensCollection from './components/Collections/MensCollection';
-import WomensCollections from './components/Collections/WomensCollection';
-import KidsCollections from './components/Collections/KidsCollection';
-import ShopPage from './components/Shop/ShopPage';
 import Footer from './components/Footer/Footer';
-import ProductPage from './components/Shop/ProductPage';
 import { Toaster } from 'sonner';
+import Homepage from './Pages.jsx/HomePage';
+import KidsCollections from './components/Collections/KidsCollection';
+import MensCollections from './components/Collections/MensCollection';
+import WomensCollections from './components/Collections/WomensCollection';
+import ProductPage from './components/Shop/ProductPage';
+import ScrollToTop from './components/ScrolllToTop/ScrollToTop';
+import ShopPage from './components/Shop/ShopPage';
+import LoginPage from './components/Signin/Login';
+import SignupPage from './components/SignUp/Signup';
+import VerifyEmailPage from './components/SignUp/Emailverification';
 
 function App() {
 
@@ -22,16 +22,18 @@ function App() {
     <>
       <Toaster richColors position="top-right" />
       <BrowserRouter>
+       <ScrollToTop />
       <Header />
         <Routes>
-          {/* <Route path="/register" element={<SignupPage/>} />
-          <Route path="/" element={<Hero/>} />
-          <Route path="/login" element={<LoginPage/>} />
-          <Route path="/verify-email" element={<EmailVerification/>} /> */}
-
-          {/* <Route path="/" element={<Mainmarket/>} /> */}
-            {/* <Route path="/" element={<ShopPage/>} /> */}
-            <Route path="/" element={<ProductPage/>} />
+          <Route path="/product/:id" element={<ProductPage />} />
+          <Route path="/category/:category" element={<ShopPage />} />
+            <Route path="/womensCollections" element={<WomensCollections/>} />
+            <Route path="/kidscollections" element={<KidsCollections/>} />
+            <Route path="/mensCollections" element={<MensCollections/>} />
+            <Route path="/login" element={<LoginPage/>} />
+            <Route path="/register" element={<SignupPage/>} />
+            <Route path="/verify-email" element={<VerifyEmailPage/>} />
+            <Route path="/" element={<Homepage/>} />
         </Routes>
         <Footer/>
       </BrowserRouter>

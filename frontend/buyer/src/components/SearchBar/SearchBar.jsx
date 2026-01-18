@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import useThemeStore from '../../Stores/ThemeStore';
+import { useNavigate } from 'react-router-dom';
 
 const SearchBar = ({ isOpen, onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -10,6 +11,7 @@ const SearchBar = ({ isOpen, onClose }) => {
   const [animate, setAnimate] = useState(false);
   const inputRef = useRef(null);
   const { darkMode } = useThemeStore();
+  const navigate = useNavigate();
 
   const products = [
     { id: 1, name: "Men's T-Shirt", category: "men", type: "tshirt", collection: "mens collection", keywords: ["men","tshirt","shirt","mens collection"] },
@@ -69,8 +71,11 @@ const SearchBar = ({ isOpen, onClose }) => {
   // THIS IS THE KEY CHANGE
   const handleCollectionClick = (collectionName) => {
     const results = products.filter(p => p.collection.toLowerCase() === collectionName.toLowerCase());
-    // Trigger handleSelectItem for each product
+    console.log(collectionName)
+    const urlPath = collectionName.toLowerCase().replace(/\s+/g, "");
     results.forEach(item => handleSelectItem(item));
+    handleClose();
+    navigate(`/${urlPath}`);
   };
 
   const handleKeyDown = (e) => {
@@ -141,7 +146,7 @@ const SearchBar = ({ isOpen, onClose }) => {
           <div className={`p-6 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             <p className="text-sm mb-3">Try Collections:</p>
             <div className="flex flex-wrap gap-2">
-              {["mens collection", "womens collection", "kids collection"].map((tag) => (
+              {["mens collections", "womens collections", "kids collections"].map((tag) => (
                 <button
                   key={tag}
                   onClick={() => handleCollectionClick(tag)}

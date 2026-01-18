@@ -3,7 +3,7 @@ import ProductCard from '../Cards/Card';
 import CategoryCard from '../Cards/Card1';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import MoreOptions from './MoreOptions';
-
+import { Link } from 'react-router-dom';
 // PaginatedGrid Component
 const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
   const [currentPage, setCurrentPage] = useState(0);
@@ -64,13 +64,18 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
     <div className="w-full max-w-6xl mx-auto p-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {currentItems.map((item, index) => (
-          <CategoryCard
+          <Link
             key={index}
-            image={item.image}
-            category={item.category}
-            name={item.name}
-            itemCount={item.itemCount}
-          />
+            to={`/category/${item.category}`} // change route if needed
+            className="block"
+          >
+            <CategoryCard
+              image={item.image}
+              category={item.category}
+              name={item.name}
+              itemCount={item.itemCount}
+            />
+          </Link>
         ))}
       </div>
 

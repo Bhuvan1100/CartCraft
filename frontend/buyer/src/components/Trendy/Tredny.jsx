@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { Link } from "react-router-dom";
 // Your existing ProductCard component (import this from your file)
 import ProductCard from '../Cards/Card';
 
@@ -119,15 +119,20 @@ export default function TrendyProductsSection() {
             {/* Products Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredProducts.map((product, index) => (
-                    <ProductCard
+                    <Link
                         key={index}
-                        image={product.image}
-                        category={product.category}
-                        name={product.name}
-                        price={product.price}
-                        rating={product.rating}
-                        reviewCount={product.reviewCount}
-                    />
+                        to={`/product/${product.id}`}   // change path as needed
+                        className="block"
+                    >
+                        <ProductCard
+                            image={product.image}
+                            category={product.category}
+                            name={product.name}
+                            price={product.price}
+                            rating={product.rating}
+                            reviewCount={product.reviewCount}
+                        />
+                    </Link>
                 ))}
             </div>
             <div className="relative mx-auto my-10 w-fit text-sm font-semibold cursor-pointer group">

@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ProductCard from '../Cards/Card';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import MoreOptions from './MoreOptions';
 
 // PaginatedGrid Component
@@ -115,9 +116,8 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
           </button>
 
           {/* Dropdown Menu */}
-          <div className={`absolute right-0 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden z-10 transition-all duration-300 origin-top ${
-            isOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
-          }`}>
+          <div className={`absolute right-0 mt-2 w-full bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden z-10 transition-all duration-300 origin-top ${isOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 pointer-events-none'
+            }`}>
             {options.map((option, index) => (
               <button
                 key={option.value}
@@ -133,15 +133,20 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {currentItems.map((item, index) => (
-          <ProductCard
+          <Link
             key={index}
-            image={item.image}
-            category={item.category}
-            name={item.name}
-            price={item.price}
-            rating={item.rating}
-            reviewCount={item.reviewCount}
-          />
+            to={`/product/${item.id}`}   // make sure item.id exists
+            className="block"
+          >
+            <ProductCard
+              image={item.image}
+              category={item.category}
+              name={item.name}
+              price={item.price}
+              rating={item.rating}
+              reviewCount={item.reviewCount}
+            />
+          </Link>
         ))}
       </div>
 

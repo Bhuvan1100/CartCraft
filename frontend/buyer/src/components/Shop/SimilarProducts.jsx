@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { Link } from 'react-router-dom';
 import ProductCard from '../Cards/Card';
 
 export default function SimilarProducts({ products = [] }) {
@@ -117,9 +118,13 @@ export default function SimilarProducts({ products = [] }) {
             <div className="overflow-hidden">
                 <div className="grid grid-cols-4 gap-4">
                     {visibleProducts.map((product) => (
-                        <div key={product.id}>
+                        <Link
+                            key={product.id}
+                            to={`/product/${product.id}`}
+                            className="block"
+                        >
                             <ProductCard {...product} />
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>
@@ -130,8 +135,8 @@ export default function SimilarProducts({ products = [] }) {
                     onClick={handlePrev}
                     disabled={currentPage === 0}
                     className={`p-1.5 rounded-full border transition-all duration-200 ${currentPage === 0
-                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                         }`}
                 >
                     <ChevronLeftIcon className="w-4 h-4" />
@@ -144,8 +149,8 @@ export default function SimilarProducts({ products = [] }) {
                             key={index}
                             onClick={() => setCurrentPage(index)}
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${currentPage === index
-                                    ? 'bg-black w-6'
-                                    : 'bg-gray-300 hover:bg-gray-400'
+                                ? 'bg-black w-6'
+                                : 'bg-gray-300 hover:bg-gray-400'
                                 }`}
                         />
                     ))}
@@ -155,8 +160,8 @@ export default function SimilarProducts({ products = [] }) {
                     onClick={handleNext}
                     disabled={currentPage === totalPages - 1}
                     className={`p-1.5 rounded-full border transition-all duration-200 ${currentPage === totalPages - 1
-                            ? 'border-gray-200 text-gray-300 cursor-not-allowed'
-                            : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                        ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                         }`}
                 >
                     <ChevronRightIcon className="w-4 h-4" />

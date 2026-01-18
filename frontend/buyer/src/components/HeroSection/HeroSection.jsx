@@ -47,7 +47,7 @@ const LazyImage = ({ blur, full, alt, className, overlayStyles, children }) => {
   );
 };
 
-export default function CollectionsPage() {
+export default function HeroSection() {
   const { darkMode } = useThemeStore();
 
   const collections = {
@@ -55,7 +55,7 @@ export default function CollectionsPage() {
       blur: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_10,e_blur:200,w_50/Women1_rkevtr.png',
       full: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_auto,w_1400/Women1_rkevtr.png',
       label: 'WOMEN COLLECTION',
-      route: '/collections/women',
+      route: '/womensCollections',
       textColor: 'text-gray-200',
       overlay: 'absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent',
     },
@@ -63,7 +63,7 @@ export default function CollectionsPage() {
       blur: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_10,e_blur:200,w_50/Mens_lzlfdk.png',
       full: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_auto,w_800/Mens_lzlfdk.png',
       label: 'MEN COLLECTION',
-      route: '/collections/men',
+      route: '/mensCollections',
       textColor: 'text-black',
       overlay: 'absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent',
     },
@@ -71,7 +71,7 @@ export default function CollectionsPage() {
       blur: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_10,e_blur:200,w_50/kid1_z3jbfj.png',
       full: 'https://res.cloudinary.com/dg0lez6mp/image/upload/f_auto,q_auto,w_800/kid1_z3jbfj.png',
       label: 'KIDS COLLECTION',
-      route: '/collections/kids',
+      route: '/kidscollections',
       textColor: 'text-black',
       overlay: 'absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent',
     },
