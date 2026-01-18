@@ -17,7 +17,7 @@ function ScrollToTop() {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: navigationType === "POP" ? "auto" : "smooth",
+      behavior:"smooth",
     });
   }, [location.key, navigationType]);
 

@@ -14,6 +14,7 @@ import ShopPage from './components/Shop/ShopPage';
 import LoginPage from './components/Signin/Login';
 import SignupPage from './components/SignUp/Signup';
 import VerifyEmailPage from './components/SignUp/Emailverification';
+import ShoppingCart from './components/Cart/Cart';
 
 function App() {
 
@@ -33,6 +34,7 @@ function App() {
             <Route path="/login" element={<LoginPage/>} />
             <Route path="/register" element={<SignupPage/>} />
             <Route path="/verify-email" element={<VerifyEmailPage/>} />
+            <Route path="/cart" element={<ShoppingCart/>} />
             <Route path="/" element={<Homepage/>} />
         </Routes>
         <Footer/>

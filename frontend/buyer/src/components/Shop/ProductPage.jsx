@@ -62,7 +62,7 @@ export default function ProductPage() {
         </button>
       </div>,
       {
-        duration: 4000,
+        duration: 2000,
         unstyled: true,
       }
     );
