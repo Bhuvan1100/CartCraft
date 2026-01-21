@@ -1,37 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function ProductTabs() {
+export default function ProductTabs({ description, additionalInfo, reviews }) {
   const [activeTab, setActiveTab] = useState('description');
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      name: 'John Doe',
-      rating: 5,
-      comment: 'Excellent product! Highly recommended.',
-      date: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      rating: 4,
-      comment: 'Good quality, fast delivery.',
-      date: '2024-01-10'
-    }
-  ]);
+  
+  // ✅ Maintain local review state for adding new reviews
+  const [reviewsState, setReviewsState] = useState([]);
   const [newReview, setNewReview] = useState({
     name: '',
     rating: 5,
     comment: ''
   });
 
+  // ✅ Initialize reviewsState with props on mount or when prop changes
+  useEffect(() => {
+    if (reviews) {
+      setReviewsState(reviews);
+    }
+  }, [reviews]);
+
   const handleSubmitReview = () => {
     if (newReview.name && newReview.comment) {
       const review = {
-        id: reviews.length + 1,
+        id: reviewsState.length + 1,
         ...newReview,
         date: new Date().toISOString().split('T')[0]
       };
-      setReviews([review, ...reviews]);
+      setReviewsState([review, ...reviewsState]);
       setNewReview({ name: '', rating: 5, comment: '' });
     }
   };
@@ -75,16 +69,8 @@ export default function ProductTabs() {
         {activeTab === 'description' && (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">Product Description</h2>
-            <p className="text-gray-700 leading-relaxed">
-              This premium product is crafted with the finest materials to ensure durability and 
-              exceptional performance. Designed with attention to detail, it combines functionality 
-              with elegant aesthetics to meet the highest standards.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              Whether you're a professional or an enthusiast, this product delivers outstanding 
-              results every time. Its innovative features and user-friendly design make it the 
-              perfect choice for your needs.
-            </p>
+            {/* ✅ Use real description from props */}
+            <p className="text-gray-700 leading-relaxed">{description}</p>
           </div>
         )}
 
@@ -92,30 +78,14 @@ export default function ProductTabs() {
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">Additional Information</h2>
             <div className="grid grid-cols-2 gap-4">
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Weight:</span>
-                <span className="ml-2 text-gray-700">2.5 kg</span>
-              </div>
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Dimensions:</span>
-                <span className="ml-2 text-gray-700">30 × 20 × 15 cm</span>
-              </div>
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Material:</span>
-                <span className="ml-2 text-gray-700">Premium Steel</span>
-              </div>
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Color:</span>
-                <span className="ml-2 text-gray-700">Black</span>
-              </div>
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Warranty:</span>
-                <span className="ml-2 text-gray-700">2 Years</span>
-              </div>
-              <div className="border-b border-gray-200 py-3">
-                <span className="font-medium text-gray-900">Country:</span>
-                <span className="ml-2 text-gray-700">Made in USA</span>
-              </div>
+              {/* ✅ Use real additionalInfo from props */}
+              {additionalInfo &&
+                Object.entries(additionalInfo).map(([key, value], index) => (
+                  <div key={index} className="border-b border-gray-200 py-3">
+                    <span className="font-medium text-gray-900">{key}:</span>
+                    <span className="ml-2 text-gray-700">{value}</span>
+                  </div>
+                ))}
             </div>
           </div>
         )}
@@ -179,7 +149,7 @@ export default function ProductTabs() {
 
             {/* Reviews List */}
             <div className="space-y-4 mt-6">
-              {reviews.map((review) => (
+              {reviewsState.map((review) => (
                 <div key={review.id} className="border-b border-gray-200 pb-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-semibold text-gray-900">{review.name}</h4>
@@ -202,12 +172,8 @@ export default function ProductTabs() {
 
       <style>{`
         @keyframes expandLine {
-          from {
-            width: 0%;
-          }
-          to {
-            width: 75%;
-          }
+          from { width: 0%; }
+          to { width: 75%; }
         }
       `}</style>
     </div>

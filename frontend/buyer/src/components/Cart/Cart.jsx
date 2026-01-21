@@ -20,7 +20,11 @@ const CartCard = ({ item, onRemove }) => {
 
                 <div className="flex items-center gap-3 mt-3">
                     <button
-                        onClick={() => onRemove(item.id)}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onRemove(item.id);
+                        }}
                         className="flex items-center gap-1 text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
                     >
                         <TrashIcon className="w-4 h-4" />

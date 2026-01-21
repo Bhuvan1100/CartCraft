@@ -4,35 +4,61 @@ import { toast } from 'sonner';
 import ProductInfo from './ProductInfo';
 import SimilarProducts from './SimilarProducts';
 import { useNavigate } from 'react-router-dom'
+import { useParams } from "react-router-dom";
 import { Link } from 'react-router-dom';
+import LoadingSpinner from '../Spinner/Spinner';
+import { fetchProductById } from '../../Stores/Data';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ProductPage() {
+  const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
 
-  const product = {
-    name: "Premium Wireless Headphones",
-    price: 299.99,
-    originalPrice: 399.99,
-    rating: 4.5,
-    totalReviews: 328,
-    description: "Experience crystal-clear audio with our premium wireless headphones. Featuring active noise cancellation, 30-hour battery life, and premium comfort padding for all-day wear.",
-    images: [
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=800&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1487215078519-e21cc028cb29?w=800&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&h=800&fit=crop"
-    ],
-    features: [
-      "Active Noise Cancellation",
-      "30-hour battery life",
-      "Premium comfort padding",
-      "Bluetooth 5.0 connectivity",
-      "Built-in microphone"
-    ],
-    inStock: true
-  };
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => fetchProductById(id),
+    enabled: !!id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
+        <p className="text-lg font-semibold text-gray-900">
+          ❌ Failed to load product
+        </p>
+        <p className="text-sm text-gray-500">
+          The product may not exist or something went wrong.
+        </p>
+
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-5 py-2 text-sm font-semibold bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+          >
+            Go Back
+          </button>
+
+        </div>
+      </div>
+    );
+  }
+
+
+  const { product, additionalInfo, reviews, category } = data;
 
   const handleQuantityChange = (type) => {
     if (type === 'increase') {
@@ -218,9 +244,14 @@ export default function ProductPage() {
         </div>
       </div>
       <div className='m-10'>
-      <ProductInfo/>
+        <ProductInfo
+          description={product.description}
+          additionalInfo={additionalInfo}
+          reviews={reviews}
+        />
       </div>
-      <SimilarProducts/>
+      <SimilarProducts category={category}
+        excludeId={product.id} />
     </div>
   );
 }
