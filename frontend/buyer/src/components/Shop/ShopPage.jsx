@@ -3,7 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import ProductCard from '../Cards/Card';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
+import LoadingSpinner from '../Spinner/Spinner';
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from 'react-router-dom';
 import MoreOptions from './MoreOptions';
+import { fetchProductsByCategory } from '../../Stores/Data';
 
 // PaginatedGrid Component
 const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
@@ -12,6 +16,8 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const itemsPerPage = 8;
+  const { slug } = useParams();
+
 
   const options = [
     { label: 'Price: Low to High', value: 'low-to-high' },
@@ -132,12 +138,8 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {currentItems.map((item, index) => (
-          <Link
-            key={index}
-            to={`/product/${item.id}`}   // make sure item.id exists
-            className="block"
-          >
+        {currentItems.map((item) => (
+          <Link key={item.id} to={`/product/${item.id}`} className="block">
             <ProductCard
               image={item.image}
               category={item.category}
@@ -185,13 +187,57 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
 };
 
 // ShopPage
-const ShopPage = ({ heading = "Shop Collection", productData }) => {
+const ShopPage = ({ heading = "Shop Collection" }) => {
   const headingRef = useRef(null);
-  const words = heading.split(' ');
+  const { slug } = useParams();
+
+  const finalHeading = slug
+    ? slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+    : heading;
+
+  const words = finalHeading.split(' ');
   const firstWord = words[0];
   const restWords = words.slice(1).join(' ');
 
-  // Default product data if none provided
+  const { data: productData, isLoading, isError } = useQuery({
+    queryKey: ["productsByCategory", "smartphones"],
+    queryFn: () => fetchProductsByCategory("smartphones"),
+    enabled: !!slug, // fetch only if slug exists
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+  if (isError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
+        <p className="text-lg font-semibold text-gray-900">
+          ❌ Failed to load product
+        </p>
+        <p className="text-sm text-gray-500">
+          The product may not exist or something went wrong.
+        </p>
+
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-5 py-2 text-sm font-semibold bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+          >
+            Go Back
+          </button>
+
+        </div>
+      </div>
+    );
+  }
+
   const defaultProductData = [
     {
       image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80",

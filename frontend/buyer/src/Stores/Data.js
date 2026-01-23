@@ -121,3 +121,21 @@ export const fetchSimilarProducts = async ({ category, excludeId }) => {
 
   return filtered;
 };
+
+export const fetchProductsByCategory = async (category,limit) => {
+  if (!category) return [];
+
+  const res = await axios.get(
+    `https://dummyjson.com/products/category/${category}?limit${limit}`
+  );
+
+  return res.data.products.map(p => ({
+    id:p.id,
+    image: p.thumbnail,
+    category: p.category,
+    name: p.title,
+    price: p.price,
+    rating: Math.round(p.rating),
+    reviewCount: `${Math.floor(Math.random() * 10 + 1)}k+`,
+  }));
+};

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShoppingCartIcon, StarIcon, MinusIcon, PlusIcon } from '@heroicons/react/24/solid';
 import { toast } from 'sonner';
 import ProductInfo from './ProductInfo';
@@ -9,12 +9,18 @@ import { Link } from 'react-router-dom';
 import LoadingSpinner from '../Spinner/Spinner';
 import { fetchProductById } from '../../Stores/Data';
 import { useQuery } from '@tanstack/react-query';
+import useCartStore from '../../Stores/ProductStore';
 
 export default function ProductPage() {
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
+  const addItem = useCartStore((state) => state.addItem);
+
+  useEffect(() => {
+    setQuantity(1);
+  }, [id]);
 
   const {
     data,
@@ -69,6 +75,13 @@ export default function ProductPage() {
   };
 
   const addToCart = () => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.images[0],
+      quantity: quantity,
+    });
     toast(
       <div className="flex items-center justify-between gap-4 mt-3 w-full px-5 py-3 bg-white border border-gray-200 rounded-md shadow-md">
         <div>
@@ -93,7 +106,6 @@ export default function ProductPage() {
       }
     );
 
-    setQuantity(1);
   };
 
 

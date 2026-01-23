@@ -51,7 +51,7 @@ const MoreOptions = ({ name = "" }) => {
           return (
             <Link
               key={key}
-              to={`/category/${key}`}
+              to={`/${data.name.split(" ")[0]}collections`}
               className={`block ${otherCategories.length === 2 ? "md:scale-105" : ""
                 }`}
             >

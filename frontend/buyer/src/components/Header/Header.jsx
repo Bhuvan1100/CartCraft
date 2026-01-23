@@ -7,6 +7,7 @@ import {
 import SearchBar from "../SearchBar/SearchBar";
 import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
+import useCartStore from "../../Stores/ProductStore";
 
 /* ===== DO NOT CHANGE (AS REQUESTED) ===== */
 const IconButtonLight = ({ children, onClick }) => (
@@ -36,6 +37,7 @@ const Header = () => {
     const navigate = useNavigate();
     const menuRef = useRef(null);
     const user = auth.currentUser;
+    const { items, clearCart, totalItems, totalPrice } = useCartStore();
 
     const isAuthenticated = (user && user.emailVerified);
 
@@ -157,7 +159,7 @@ const Header = () => {
                             <div className="relative cursor-pointer">
                                 <ShoppingCartIcon className="h-6 w-6" />
                                 <span className="absolute  -top-2 -right-2 bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                    0
+                                    {totalItems()}
                                 </span>
                             </div>
                         </IconButtonLight>

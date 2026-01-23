@@ -5,7 +5,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import MoreOptions from './MoreOptions';
 import { Link } from 'react-router-dom';
 // PaginatedGrid Component
-const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
+const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef, firstWord }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 8;
 
@@ -66,7 +66,10 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
         {currentItems.map((item, index) => (
           <Link
             key={index}
-            to={`/category/${item.category}`} // change route if needed
+            to={`/category/${firstWord}-${item.name
+              .toLowerCase()
+              .trim()
+              .replace(/\s+/g, "-")}`} // change route if needed
             className="block"
           >
             <CategoryCard
@@ -139,6 +142,7 @@ const Mainmarket = ({ heading = "Kids Collection", productData }) => {
         allData={productData}
         maxPageNumbers={5}
         scrollRef={headingRef}
+        firstWord={firstWord}
       />
       <MoreOptions name={firstWord} />
     </div>
