@@ -4,6 +4,7 @@ import { TrashIcon, ShoppingCartIcon, TruckIcon, HomeIcon, CheckCircleIcon } fro
 import { toast } from 'sonner';
 import useCartStore from '../../Stores/ProductStore';
 
+
 const CartCard = ({ item }) => {
   const navigate = useNavigate();
 
@@ -56,6 +57,15 @@ const CartCard = ({ item }) => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+
+                  // 🔒 BLOCK MORE THAN 10
+                  if (item.quantity >= 10) {
+                    toast.info("Cannot buy more than 10 same items in one time", {
+                      style: { fontSize: "15px" },
+                    });
+                    return;
+                  }
+
                   increaseQty(item.id);
                 }}
                 className="px-3 py-1 transition-colors font-semibold text-gray-700"
@@ -87,9 +97,10 @@ const CartCard = ({ item }) => {
 };
 
 
+
 export default function ShoppingCart() {
   const { items, clearCart, totalItems, totalPrice } = useCartStore();
-  const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart', 'address', 'payment'
+  const [checkoutStep, setCheckoutStep] = useState('cart');
   const [savedAddress, setSavedAddress] = useState(null);
   const navigate = useNavigate();
   const [address, setAddress] = useState({

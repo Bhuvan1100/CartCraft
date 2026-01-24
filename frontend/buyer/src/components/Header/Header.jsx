@@ -132,10 +132,16 @@ const Header = () => {
                                     ) : (
                                         <>
                                             <button
-                                                onClick={() => { navigate("/orders"); setUserMenuOpen(false); }}
+                                                onClick={() => { navigate("/previous-orders"); setUserMenuOpen(false); }}
                                                 className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
                                             >
                                                 Previous Orders
+                                            </button>
+                                            <button
+                                                onClick={() => { navigate("/current-orders"); setUserMenuOpen(false); }}
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
+                                            >
+                                                Current Orders
                                             </button>
                                             <button
                                                 onClick={() => { navigate("/profile"); setUserMenuOpen(false); }}

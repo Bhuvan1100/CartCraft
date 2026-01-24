@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { EnvelopeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { sendEmailVerification } from 'firebase/auth';
+import useUserStore from '../../Stores/UserStore';
 import { auth } from '../../Firebase/firebase';
 import { useNavigate } from "react-router-dom";
 import useThemeStore from '../../Stores/ThemeStore';
@@ -63,8 +64,9 @@ export default function VerifyEmailPage() {
       
       if (user.emailVerified) {
         setSuccessMessage('Email verified successfully! Redirecting...');
+        useUserStore.getState().setLoginStatus(true, user.email);
         setTimeout(() => {
-          navigate('/home');
+          navigate('/');
         }, 1500);
       } else {
         setErrors({ general: 'Email not verified yet. Please check your inbox and click the verification link.' });

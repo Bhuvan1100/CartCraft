@@ -9,6 +9,7 @@ import {
 import { sendEmailVerification } from "firebase/auth";
 import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
+import useUserStore from '../../Stores/UserStore';
 import useThemeStore from '../../Stores/ThemeStore';
 
 // Initialize Google Provider
@@ -25,6 +26,7 @@ export default function SignupPage() {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -95,6 +97,11 @@ export default function SignupPage() {
       const user = result.user;
       const credential = GoogleAuthProvider.credentialFromResult(result);
       setSuccessMessage(`Signed in successfully.`);
+      setFormData({ email: '', password: '' });
+      useUserStore.getState().setLoginStatus(true,user.email);
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
       console.log('User signed in with Google:', user);
       console.log('Access token:', credential?.accessToken);
     } catch (error) {

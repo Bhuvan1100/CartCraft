@@ -16,7 +16,17 @@ export default function ProductPage() {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
-  const addItem = useCartStore((state) => state.addItem);
+
+  const {
+    items,
+    addItem,
+    increaseQty,
+    decreaseQty,
+    removeItem,
+    clearCart,
+    totalItems,
+    totalPrice,
+  } = useCartStore();
 
   useEffect(() => {
     setQuantity(1);
@@ -67,6 +77,14 @@ export default function ProductPage() {
   const { product, additionalInfo, reviews, category } = data;
 
   const handleQuantityChange = (type) => {
+    if (quantity === 10 && type === 'increase') {
+      toast.info("Cannot buy more than 10 same item in one time", {
+        style: {
+          fontSize: "15px",
+        },
+      });
+      return;
+    }
     if (type === 'increase') {
       setQuantity(prev => prev + 1);
     } else if (type === 'decrease' && quantity > 1) {
@@ -75,6 +93,15 @@ export default function ProductPage() {
   };
 
   const addToCart = () => {
+    const isInCart = items.some((item) => item.id === product.id);
+    if (isInCart) {
+      toast.info("Product already in cart", {
+        style: {
+          fontSize: "15px",
+        },
+      });
+      return;
+    }
     addItem({
       id: product.id,
       name: product.name,
@@ -135,13 +162,13 @@ export default function ProductPage() {
               {/* Thumbnail Images */}
               {product.images.length > 1 && (
                 <div className="flex flex-col gap-3 w-24">
-                  {product.images.map((image, index) => (
+                  {product.images.slice(0, 4).map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
-                        ? 'border-blue-500'
-                        : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-blue-500'
+                          : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <img
