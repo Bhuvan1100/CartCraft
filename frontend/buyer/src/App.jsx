@@ -29,11 +29,13 @@ function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+      if (user && user.emailVerified) {
         useUserStore.getState().setLoginStatus(true, user.email);
       } else {
+        // either no user OR email not verified
         useUserStore.getState().setLoginStatus(false);
       }
+
       setAuthLoading(false);
     });
 
