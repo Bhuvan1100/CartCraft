@@ -65,7 +65,7 @@ export default function VerifyEmail() {
         
         if (user.emailVerified) {
           // Email is verified, navigate to dashboard or home
-          navigate('/dashboard'); // Change this to your desired route
+          navigate('/add-items'); // Change this to your desired route
         } else {
           alert('Email not verified yet. Please check your inbox and click the verification link.');
         }

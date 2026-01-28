@@ -1,6 +1,9 @@
 import { UserIcon, PhoneIcon, EnvelopeIcon, BuildingStorefrontIcon, MapPinIcon, IdentificationIcon } from '@heroicons/react/24/outline';
 
 export default function SellerInfo() {
+
+  
+
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">

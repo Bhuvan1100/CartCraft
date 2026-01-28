@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { EnvelopeIcon, LockClosedIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../../Firebase/firebase'; // Import your firebase config
+import { useNavigate } from 'react-router-dom';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate() 
 
   const handleEmailSignIn = async (e) => {
     e.preventDefault();
@@ -16,6 +18,7 @@ export default function SignIn() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      navigate('/add-items')
       // Redirect or handle successful sign in
       console.log('Signed in successfully');
     } catch (err) {
@@ -33,6 +36,7 @@ export default function SignIn() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       // Redirect or handle successful sign in
+      navigate('/add-items')
       console.log('Signed in with Google');
     } catch (err) {
       setError(err.message);
