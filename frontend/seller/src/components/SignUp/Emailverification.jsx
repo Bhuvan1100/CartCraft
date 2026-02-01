@@ -29,7 +29,7 @@ export default function VerifyEmail() {
       const interval = setInterval(() => {
         setResendTimer((prev) => prev - 1);
       }, 1000);
-      
+
       return () => clearInterval(interval);
     }
   }, [resendTimer]);
@@ -62,10 +62,10 @@ export default function VerifyEmail() {
       if (user) {
         // Reload user to get latest email verification status
         await user.reload();
-        
+
         if (user.emailVerified) {
           // Email is verified, navigate to dashboard or home
-          navigate('/add-items'); // Change this to your desired route
+          navigate('/'); // Change this to your desired route
         } else {
           alert('Email not verified yet. Please check your inbox and click the verification link.');
         }
@@ -133,17 +133,18 @@ export default function VerifyEmail() {
 
             <button
               onClick={handleResendEmail}
-              disabled={resendLoading || resendTimer > 0}
+              disabled={resendLoading || resendTimer > 0 || checkingVerification}
               className="w-full bg-white border-2 border-gray-300 text-gray-700 py-2.5 px-4 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <ArrowPathIcon className={`h-5 w-5 ${resendLoading ? 'animate-spin' : ''}`} />
-              {resendLoading 
-                ? 'Sending...' 
-                : resendTimer > 0 
-                  ? `Resend in ${resendTimer}s` 
+              {resendLoading
+                ? 'Sending...'
+                : resendTimer > 0
+                  ? `Resend in ${resendTimer}s`
                   : 'Resend Verification Email'
               }
             </button>
+
           </div>
 
           {/* Help Text */}
@@ -152,10 +153,10 @@ export default function VerifyEmail() {
               Didn't receive the email? Check your spam folder or click resend.
             </p>
             <button
-              onClick={() => navigate('/signin')}
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+              onClick={() => navigate('/signup')}
+              className="text-sm cursor-pointer text-purple-600 hover:text-purple-700 font-medium"
             >
-              ← Back to Sign In
+              ← Back to Sign Up
             </button>
           </div>
         </div>

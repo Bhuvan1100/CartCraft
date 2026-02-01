@@ -24,14 +24,14 @@ const useUserStore = create((set, get) => ({
   // --------------------
   // AUTH / LOGIN STATE
   // --------------------
-  setLoginStatus: (status, email = null) => {
-    // if status is true and email is passed, use that
-    // otherwise keep the current email
+  setLoginStatus: (status, email = null, isVerified = false) => {
     set((state) => ({
       isLoggedIn: status,
-      email: status ? email || state.email : "", 
+      email: status ? email || state.email : "",
+      isVerified: status ? isVerified : false,
     }));
   },
+
 
   // --------------------
   // ADDRESS
@@ -44,12 +44,14 @@ const useUserStore = create((set, get) => ({
       const data = await res.json();
 
       set({
-        email: data.email || "", // backend sends email
+        email: data.email || "",
         isLoggedIn: !!data.email,
         address: {
-          addressLine1: data.address.address || "",
-          addressLine2: data.address.city || "",
-          pincode: data.address.postalCode || "",
+          streetAddress: data.address?.address || "123 Main St",
+          city: data.address?.city || "New York",
+          state: data.address?.state || "NY",
+          zipCode: data.address?.postalCode || "10001",
+          country: data.address?.country || "USA",
           phone: data.phone || "",
         },
       });
@@ -60,16 +62,19 @@ const useUserStore = create((set, get) => ({
     }
   },
 
+
   addAddress: (newAddress) => {
     set({
       address: {
-        addressLine1: newAddress.addressLine1 || "",
-        addressLine2: newAddress.addressLine2 || "",
-        pincode: newAddress.pincode || "",
-        phone: newAddress.phone || "",
+        streetAddress: newAddress.streetAddress || "",
+        city: newAddress.city || "",
+        state: newAddress.state || "",
+        zipCode: newAddress.zipCode || "",
+        country: newAddress.country || "",
       },
     });
   },
+
 
   // --------------------
   // ORDERS

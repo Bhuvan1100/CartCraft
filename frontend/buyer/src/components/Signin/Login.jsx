@@ -71,7 +71,7 @@ export default function LoginPage() {
         formData.password
       );
       setSuccessMessage(`Signed in successfully.`);
-      useUserStore.getState().setLoginStatus(true, email);
+      useUserStore.getState().setLoginStatus(true, formData.email);
       setFormData({ email: '', password: '' });
       setTimeout(() => {
         navigate("/");

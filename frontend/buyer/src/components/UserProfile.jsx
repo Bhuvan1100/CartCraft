@@ -11,10 +11,11 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true);
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [addressForm, setAddressForm] = useState({
-    addressLine1: "",
-    addressLine2: "",
-    pincode: "",
-    phone: ""
+    streetAddress: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: ""
   });
 
   // Step 1: Check login and fetch data
@@ -26,10 +27,11 @@ export default function UserProfile() {
       }
       await fetchUserAddress();
       setAddressForm({
-        addressLine1: address.addressLine1 || "",
-        addressLine2: address.addressLine2 || "",
-        pincode: address.pincode || "",
-        phone: address.phone || ""
+        streetAddress: address.streetAddress || "",
+        city: address.city || "",
+        state: address.state || "",
+        zipCode: address.zipCode || "",
+        country: address.country || ""
       });
       setLoading(false);
     };
@@ -45,25 +47,31 @@ export default function UserProfile() {
   }
 
   const hasAddress =
-    address.addressLine1 && address.addressLine2 && address.pincode && address.phone;
+    address.streetAddress &&
+    address.city &&
+    address.state &&
+    address.zipCode &&
+    address.country;
 
   const handleAddressChange = (e) => {
     setAddressForm({ ...addressForm, [e.target.name]: e.target.value });
   };
 
   const handleSaveAddress = () => {
-    const { addressLine1, addressLine2, pincode, phone } = addressForm;
-    if (!addressLine1 || !addressLine2 || !pincode || !phone) return alert("Fill all fields");
+    const { streetAddress, city, state, zipCode, country } = addressForm;
+    if (!streetAddress || !city || !state || !zipCode || !country)
+      return alert("Fill all fields");
     addAddress(addressForm);
     setIsEditingAddress(false);
   };
 
   const handleCancelEdit = () => {
     setAddressForm({
-      addressLine1: address.addressLine1 || "",
-      addressLine2: address.addressLine2 || "",
-      pincode: address.pincode || "",
-      phone: address.phone || ""
+      streetAddress: address.streetAddress || "",
+      city: address.city || "",
+      state: address.state || "",
+      zipCode: address.zipCode || "",
+      country: address.country || ""
     });
     setIsEditingAddress(false);
   };
@@ -116,34 +124,42 @@ export default function UserProfile() {
                 <div className="mt-2 space-y-3">
                   <input
                     type="text"
-                    name="addressLine1"
-                    value={addressForm.addressLine1}
+                    name="streetAddress"
+                    value={addressForm.streetAddress}
                     onChange={handleAddressChange}
-                    placeholder="Street, apartment, suite, etc."
+                    placeholder="Street Address"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                   <input
                     type="text"
-                    name="addressLine2"
-                    value={addressForm.addressLine2}
+                    name="city"
+                    value={addressForm.city}
                     onChange={handleAddressChange}
-                    placeholder="City, district, area"
+                    placeholder="City"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                   <input
                     type="text"
-                    name="pincode"
-                    value={addressForm.pincode}
+                    name="state"
+                    value={addressForm.state}
                     onChange={handleAddressChange}
-                    placeholder="PIN code"
+                    placeholder="State"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                   <input
-                    type="tel"
-                    name="phone"
-                    value={addressForm.phone}
+                    type="text"
+                    name="zipCode"
+                    value={addressForm.zipCode}
                     onChange={handleAddressChange}
-                    placeholder="Phone number"
+                    placeholder="ZIP Code"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <input
+                    type="text"
+                    name="country"
+                    value={addressForm.country}
+                    onChange={handleAddressChange}
+                    placeholder="Country"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                   />
                   <div className="flex space-x-2 pt-2">
@@ -153,10 +169,10 @@ export default function UserProfile() {
                 </div>
               ) : (
                 <div className="mt-1 space-y-1">
-                  <p>{address.addressLine1}</p>
-                  <p>{address.addressLine2}</p>
-                  <p>PIN: {address.pincode}</p>
-                  <p>Phone: {address.phone}</p>
+                  <p>{address.streetAddress}</p>
+                  <p>{address.city}, {address.state}</p>
+                  <p>ZIP: {address.zipCode}</p>
+                  <p>{address.country}</p>
                 </div>
               )}
             </div>

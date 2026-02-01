@@ -1,8 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import useSellerInfoStore from '../../stores/SellerInfoStore';
+import { useNavigate } from 'react-router-dom';
 
 export default function MyProducts() {
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
+  const isComplete = useSellerInfoStore((state) => state.isComplete);
+  const fetchSellerInfo = useSellerInfoStore((state) => state.fetchSellerInfo);
+
+  useEffect(() => {
+    // Fetch seller info first to ensure we have the latest data
+    fetchSellerInfo();
+  }, [fetchSellerInfo]);
+
+  useEffect(() => {
+    if (!isComplete) {
+      setMessage("Please fill your seller details before viewing products");
+      const timer = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, navigate]);
   
   // Mock data - replace with actual data from your backend/Firebase
   const [products, setProducts] = useState([
@@ -66,6 +88,20 @@ export default function MyProducts() {
            parseInt(sizes.m.quantity || 0) + 
            parseInt(sizes.l.quantity || 0);
   };
+
+  // If not complete, show only the message
+  if (!isComplete && message) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
+          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-6 py-4 rounded-lg text-center">
+            <p className="font-medium">{message}</p>
+            <p className="text-sm mt-2">Redirecting...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">

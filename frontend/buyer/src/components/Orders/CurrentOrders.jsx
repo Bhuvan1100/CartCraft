@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useUserStore from "../../Stores/UserStore";
 import LoadingSpinner from "../Spinner/Spinner";
-import { 
-  TruckIcon, 
-  ShoppingBagIcon, 
-  CheckCircleIcon, 
+import {
+  TruckIcon,
+  ShoppingBagIcon,
+  CheckCircleIcon,
   ClockIcon,
   CubeIcon,
   CurrencyDollarIcon,
@@ -14,7 +14,11 @@ import {
 
 export default function CurrentOrdersPage() {
   const navigate = useNavigate();
-  const { isLoggedIn, fetchCurrentOrders, currentOrders } = useUserStore();
+
+  const isLoggedIn = useUserStore(state => state.isLoggedIn);
+  const isVerified = useUserStore(state => state.isVerified);
+  const fetchCurrentOrders = useUserStore(state => state.fetchCurrentOrders);
+  const currentOrders = useUserStore(state => state.currentOrders);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +27,10 @@ export default function CurrentOrdersPage() {
         navigate("/login");
         return;
       }
-
+      if (!isVerified) {
+        navigate("/verify-email");
+        return;
+      }
       try {
         await fetchCurrentOrders();
       } catch (err) {
@@ -34,7 +41,7 @@ export default function CurrentOrdersPage() {
     };
 
     checkAuthAndFetch();
-  }, [isLoggedIn, navigate, fetchCurrentOrders]);
+  }, [isLoggedIn, navigate, isVerified, fetchCurrentOrders]);
 
   // Generate random progress for demo (in real app, this would come from backend)
   const getOrderProgress = (orderId) => {
@@ -55,7 +62,7 @@ export default function CurrentOrdersPage() {
   };
 
   const getStageIcon = (stage) => {
-    switch(stage) {
+    switch (stage) {
       case 'ORDERED': return ShoppingBagIcon;
       case 'PACKED': return CubeIcon;
       case 'SHIPPED': return TruckIcon;
@@ -142,25 +149,22 @@ export default function CurrentOrdersPage() {
                           <div key={stage} className="flex-1 relative">
                             <div className="flex flex-col items-center">
                               <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
-                                  isPast ? 'bg-green-500' : isActive ? 'bg-blue-500 ring-4 ring-blue-200' : 'bg-gray-300'
-                                }`}
+                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${isPast ? 'bg-green-500' : isActive ? 'bg-blue-500 ring-4 ring-blue-200' : 'bg-gray-300'
+                                  }`}
                               >
                                 <Icon className="w-6 h-6 text-white" />
                               </div>
                               <div className="mt-2 text-center">
-                                <p className={`text-xs font-semibold ${
-                                  isPast || isActive ? 'text-slate-900' : 'text-slate-400'
-                                }`}>
+                                <p className={`text-xs font-semibold ${isPast || isActive ? 'text-slate-900' : 'text-slate-400'
+                                  }`}>
                                   {stageName}
                                 </p>
                               </div>
                             </div>
                             {index < stages.length - 2 && (
                               <div className="absolute top-6 left-1/2 w-full h-1 -z-10">
-                                <div className={`h-full transition-all duration-500 ${
-                                  index < currentStageIndex ? 'bg-green-500' : 'bg-gray-300'
-                                }`} />
+                                <div className={`h-full transition-all duration-500 ${index < currentStageIndex ? 'bg-green-500' : 'bg-gray-300'
+                                  }`} />
                               </div>
                             )}
                           </div>

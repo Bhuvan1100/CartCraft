@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { PhotoIcon, XMarkIcon, TagIcon, CurrencyRupeeIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/outline';
+import useSellerInfoStore from '../../stores/SellerInfoStore';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // TODO: Add your Cloudinary configuration here
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET; // Replace with your upload preset
@@ -8,6 +11,21 @@ const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME; // Rep
 export default function AddItem() {
   const [images, setImages] = useState([]); // Array of Cloudinary URLs
   const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState(""); // NEW: Temporary message before redirect
+  const navigate = useNavigate();
+  const isComplete = useSellerInfoStore((state) => state.isComplete);
+
+  useEffect(() => {
+    if (!isComplete) {
+      setMessage("Please fill your seller details before adding products"); // Show message
+      const timer = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 2000); // 2 seconds before redirect
+
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, navigate]);
+
   const [formData, setFormData] = useState({
     productName: '',
     description: '',
@@ -107,6 +125,20 @@ export default function AddItem() {
     // }
     // Add your submit logic here
   };
+
+  // If not complete, show only the message
+  if (!isComplete && message) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
+          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 px-6 py-4 rounded-lg text-center">
+            <p className="font-medium">{message}</p>
+            <p className="text-sm mt-2">Redirecting...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 py-12 px-4 sm:px-6 lg:px-8">

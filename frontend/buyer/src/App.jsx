@@ -14,7 +14,7 @@ import ShopPage from './components/Shop/ShopPage';
 import LoginPage from './components/Signin/Login';
 import SignupPage from './components/SignUp/Signup';
 import VerifyEmailPage from './components/SignUp/Emailverification';
-import ShoppingCart from './components/Cart/Cart';
+import ShoppingCart from './components/Cart/ShoppingCart';
 import { useEffect } from 'react';
 import useUserStore from './Stores/UserStore';
 import CurrentOrdersPage from './components/Orders/CurrentOrders';
@@ -23,19 +23,25 @@ import { useState } from 'react';
 import { auth } from './Firebase/firebase';
 import PreviousOrdersPage from './components/Orders/PreviousOrders';
 import { onAuthStateChanged } from 'firebase/auth';
+import AddressPage from './components/Cart/AddressPage';
+import PaymentPage from './components/Cart/PaymentPage';
 
 function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && user.emailVerified) {
-        useUserStore.getState().setLoginStatus(true, user.email);
-      } else {
-        // either no user OR email not verified
-        useUserStore.getState().setLoginStatus(false);
-      }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
 
+      if (!user) {
+        useUserStore.getState().setLoginStatus(false, null, false);
+        setAuthLoading(false);
+      }else{
+        useUserStore.getState().setLoginStatus(
+          true,                 
+          user.email,            
+          user.emailVerified      
+        );
+      }
       setAuthLoading(false);
     });
 
@@ -67,6 +73,8 @@ function App() {
           <Route path="/register" element={<SignupPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/cart" element={<ShoppingCart />} />
+          <Route path="/checkout/address" element={<AddressPage />} />
+          <Route path="/checkout/payment" element={<PaymentPage />} />
           <Route path="/" element={<Homepage />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/previous-orders" element={<PreviousOrdersPage />} />

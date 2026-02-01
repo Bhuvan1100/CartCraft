@@ -9,7 +9,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate() 
+  const navigate = useNavigate()
 
   const handleEmailSignIn = async (e) => {
     e.preventDefault();
@@ -180,9 +180,13 @@ export default function SignIn() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <button className="text-purple-600 hover:text-purple-700 font-medium">
+              <button
+                onClick={() => navigate("/signup")}
+                className="cursor-pointer text-purple-600 hover:text-purple-700 font-medium"
+              >
                 Sign up
               </button>
+
             </p>
           </div>
         </div>

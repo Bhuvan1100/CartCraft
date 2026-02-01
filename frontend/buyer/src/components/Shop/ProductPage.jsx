@@ -10,12 +10,15 @@ import LoadingSpinner from '../Spinner/Spinner';
 import { fetchProductById } from '../../Stores/Data';
 import { useQuery } from '@tanstack/react-query';
 import useCartStore from '../../Stores/ProductStore';
+import useUserStore from '../../Stores/UserStore';
 
 export default function ProductPage() {
   const { id } = useParams();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const navigate = useNavigate();
+  const isLoggedIn = useUserStore(state => state.isLoggedIn);
+  const isVerified = useUserStore(state => state.isVerified);
 
   const {
     items,
@@ -93,6 +96,28 @@ export default function ProductPage() {
   };
 
   const addToCart = () => {
+    if (!isLoggedIn) {
+      toast.info("Please login to purchase products", {
+        style: { fontSize: "15px" },
+
+        action: {
+          label: "Login",
+          onClick: () => navigate("/login"),
+        },
+      });
+      return;
+    }
+    if (!isVerified) {
+      toast.info("Please verify-email to purchase products", {
+        style: { fontSize: "15px" },
+
+        action: {
+          label: "verify-email",
+          onClick: () => navigate("/verify-email"),
+        },
+      });
+      return;
+    }
     const isInCart = items.some((item) => item.id === product.id);
     if (isInCart) {
       toast.info("Product already in cart", {
@@ -167,8 +192,8 @@ export default function ProductPage() {
                       key={index}
                       onClick={() => setSelectedImage(index)}
                       className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedImage === index
-                          ? 'border-blue-500'
-                          : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-blue-500'
+                        : 'border-gray-200 hover:border-gray-300'
                         }`}
                     >
                       <img

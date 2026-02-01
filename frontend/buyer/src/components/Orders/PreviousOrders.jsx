@@ -6,7 +6,10 @@ import { ShoppingBagIcon, CalendarIcon, CubeIcon, CurrencyDollarIcon, CheckCircl
 
 export default function PreviousOrdersPage() {
   const navigate = useNavigate();
-  const { isLoggedIn, fetchPreviousOrders, previousOrders } = useUserStore();
+  const isLoggedIn = useUserStore(state => state.isLoggedIn);
+  const isVerified = useUserStore(state => state.isVerified);
+  const fetchPreviousOrders = useUserStore(state => state.fetchPreviousOrders);
+  const previousOrders = useUserStore(state => state.previousOrders);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +18,10 @@ export default function PreviousOrdersPage() {
         navigate("/login");
         return;
       }
-
+      if(!isVerified){
+        navigate("/verify-email");
+        return;
+      }
       try {
         await fetchPreviousOrders();
       } catch (err) {
@@ -26,7 +32,7 @@ export default function PreviousOrdersPage() {
     };
 
     checkAuthAndFetch();
-  }, [isLoggedIn, navigate, fetchPreviousOrders]);
+  }, [isLoggedIn, navigate,isVerified, fetchPreviousOrders]);
 
   if (loading) {
     return (
@@ -88,7 +94,7 @@ export default function PreviousOrdersPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3 text-slate-600">
                     <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
