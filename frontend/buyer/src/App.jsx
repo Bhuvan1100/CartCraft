@@ -15,49 +15,178 @@ import LoginPage from './components/Signin/Login';
 import SignupPage from './components/SignUp/Signup';
 import VerifyEmailPage from './components/SignUp/Emailverification';
 import ShoppingCart from './components/Cart/ShoppingCart';
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import useUserStore from './Stores/UserStore';
 import CurrentOrdersPage from './components/Orders/CurrentOrders';
 import UserProfile from './components/UserProfile';
-import { useState } from 'react';
 import { auth } from './Firebase/firebase';
 import PreviousOrdersPage from './components/Orders/PreviousOrders';
 import { onAuthStateChanged } from 'firebase/auth';
 import AddressPage from './components/Cart/AddressPage';
 import PaymentPage from './components/Cart/PaymentPage';
+import axios from 'axios'
 
 function App() {
+
   const [authLoading, setAuthLoading] = useState(true);
+  const retryRef = useRef(false);
 
   useEffect(() => {
+
+    // console.log("🚀 App mounted — Setting up Firebase auth listener");
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
 
+      // console.log("🔄 onAuthStateChanged triggered");
+      // console.log("👤 Firebase user object:", user);
+
+      const verifyBackend = async () => {
+
+        // console.log("📡 Calling backend: /api/verifyUser");
+
+        try {
+
+          const response = await axios.post(
+            "/api/verifyUser",
+            {},
+            { withCredentials: true }
+          );
+
+          // console.log("✅ Backend response:", response.data);
+
+          if (response.data.authenticated) {
+
+            // console.log("🎉 Backend authentication SUCCESS");
+
+            const backendUser = response.data.user;
+
+            localStorage.setItem("id", backendUser.userId);
+            // console.log("🆔 Stored userId in localStorage:", backendUser.userId);
+            
+
+            useUserStore.getState().setLoginStatus(
+              true,
+              user.email,
+              user.emailVerified
+            );
+
+            // console.log("🟢 Login status set TRUE");
+            
+            // Fetch user data (cart + orders) after successful login
+            console.log("📦 Fetching user data (cart & orders)...");
+            await useUserStore.getState().fetchUserData();
+            console.log("✅ User data fetched successfully");
+            
+            retryRef.current = false;
+
+          } else {
+
+            // console.log("⚠️ Backend says NOT authenticated");
+
+            // 🟢 Case: Email not verified → do NOT logout
+            if (!user.emailVerified) {
+
+              // console.log("📩 Email not verified. Keeping user logged in.");
+
+              useUserStore.getState().setLoginStatus(
+                true,
+                user.email,
+                false
+              );
+
+              setAuthLoading(false);
+              return;
+            }
+
+            // 🔁 Retry once
+            if (user && !retryRef.current) {
+
+              // console.log("🔁 Retrying backend verification once...");
+              retryRef.current = true;
+
+              await new Promise(res => setTimeout(res, 500));
+              return verifyBackend();
+            }
+
+            // console.log("❌ Verified but backend still failing. Logging out...");
+            await auth.signOut();
+            useUserStore.getState().setLoginStatus(false, null, false);
+          }
+
+        } catch (error) {
+
+          // console.error("🔥 Backend verification ERROR:", error);
+
+          // 🟢 If email not verified → DO NOT logout
+          if (!user.emailVerified) {
+
+            // console.log("📩 Email not verified & backend failed. NOT logging out.");
+
+            useUserStore.getState().setLoginStatus(
+              true,
+              user.email,
+              false
+            );
+
+            setAuthLoading(false);
+            return;
+          }
+
+          // 🔁 Retry once
+          if (user && !retryRef.current) {
+
+            // console.log("🔁 Backend error. Retrying once...");
+            retryRef.current = true;
+
+            await new Promise(res => setTimeout(res, 500));
+            return verifyBackend();
+          }
+
+          // console.log("❌ Verified user but backend permanently failing. Logging out.");
+          await auth.signOut();
+          useUserStore.getState().setLoginStatus(false, null, false);
+
+        } finally {
+
+          // console.log("⏹ Auth loading complete");
+          setAuthLoading(false);
+        }
+      };
+
       if (!user) {
+
+        // console.log("🚪 No Firebase user found. Setting login false.");
+
         useUserStore.getState().setLoginStatus(false, null, false);
         setAuthLoading(false);
-      }else{
-        useUserStore.getState().setLoginStatus(
-          true,                 
-          user.email,            
-          user.emailVerified      
-        );
+
+      } else {
+
+        // console.log("🔐 Firebase user detected");
+        // console.log("📧 Email:", user.email);
+        // console.log("✔️ Email verified:", user.emailVerified);
+
+        await verifyBackend();
       }
-      setAuthLoading(false);
+
     });
 
-    return () => unsubscribe();
+    return () => {
+      // console.log("🧹 Cleaning up Firebase auth listener");
+      unsubscribe();
+    };
+
   }, []);
 
   if (authLoading) {
-    // Return spinner while loading
     return (
       <div className="relative w-full h-screen flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
-  return (
 
+  return (
     <>
       <Toaster richColors position="top-right" />
       <BrowserRouter>

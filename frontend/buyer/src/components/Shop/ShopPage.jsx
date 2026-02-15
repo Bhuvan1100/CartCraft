@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ProductCard from '../Cards/Card';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../Spinner/Spinner';
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from 'react-router-dom';
@@ -10,14 +10,10 @@ import MoreOptions from './MoreOptions';
 import { fetchProductsByCategory } from '../../Stores/Data';
 
 // PaginatedGrid Component
-const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
-  const [currentPage, setCurrentPage] = useState(0);
+const PaginatedGrid = ({ allData = [], pagination = {}, onPageChange, scrollRef, isLoading }) => {
   const [sortOrder, setSortOrder] = useState('none');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const itemsPerPage = 8;
-  const { slug } = useParams();
-
 
   const options = [
     { label: 'Price: Low to High', value: 'low-to-high' },
@@ -28,37 +24,24 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
   const sortedData = [...allData].sort((a, b) => {
     if (sortOrder === 'low-to-high') return a.price - b.price;
     if (sortOrder === 'high-to-low') return b.price - a.price;
-    if (sortOrder === 'popularity') {
-      for (let i = allData.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allData[i], allData[j]] = [allData[j], allData[i]];
-      }
-      return 0;
-    }
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const startIndex = currentPage * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = sortedData.slice(startIndex, endIndex);
-
   const handleNext = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
+    if (pagination.page < pagination.totalPages) {
+      onPageChange(pagination.page + 1);
     }
   };
 
   const handlePrevious = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
+    if (pagination.page > 1) {
+      onPageChange(pagination.page - 1);
     }
   };
 
   const handleSelect = (option) => {
     setSortOrder(option.value);
     setIsOpen(false);
-    setCurrentPage(0);
   };
 
   useEffect(() => {
@@ -104,7 +87,15 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
     };
 
     requestAnimationFrame(animateScroll);
-  }, [currentPage, scrollRef]);
+  }, [pagination.page, scrollRef]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto p-6">
@@ -137,51 +128,60 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {currentItems.map((item) => (
-          <Link key={item.id} to={`/product/${item.id}`} className="block">
-            <ProductCard
-              image={item.image}
-              category={item.category}
-              name={item.name}
-              price={item.price}
-              rating={item.rating}
-              reviewCount={item.reviewCount}
-            />
-          </Link>
-        ))}
-      </div>
-
-      {allData.length > itemsPerPage && (
-        <div className="flex items-center justify-center gap-6 mt-8">
-          <button
-            onClick={handlePrevious}
-            disabled={currentPage === 0}
-            className="text-[18px] font-medium disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:text-black transition-colors relative group"
-          >
-            Previous
-            {currentPage > 0 && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-1/2"></span>
-            )}
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-0 group-hover:w-full transition-all duration-300"></span>
-          </button>
-
-          <span className="text-[18px] font-semibold">{currentPage + 1}</span>
-
-          <button
-            onClick={handleNext}
-            disabled={currentPage === totalPages - 1}
-            className="text-[18px] font-medium disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:text-black transition-colors relative group"
-          >
-            Next
-            {currentPage < totalPages - 1 && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-1/2"></span>
-            )}
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-0 group-hover:w-[85%] transition-all duration-300"></span>
-          </button>
+      {sortedData.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-lg text-gray-500">No products found in this category.</p>
         </div>
-      )}
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {sortedData.map((item) => (
+              <Link key={item.id} to={`/product/${item.id}`} className="block">
+                <ProductCard
+                  image={item.image}
+                  category={item.category}
+                  name={item.name}
+                  price={item.price}
+                  rating={item.rating}
+                  ratingCount={item.ratingCount}
+                />
+              </Link>
+            ))}
+          </div>
 
+          {pagination.totalPages > 1 && (
+            <div className="flex items-center justify-center gap-6 mt-8">
+              <button
+                onClick={handlePrevious}
+                disabled={pagination.page === 1}
+                className="text-[18px] font-medium disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:text-black transition-colors relative group"
+              >
+                Previous
+                {pagination.page > 1 && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-1/2"></span>
+                )}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-0 group-hover:w-full transition-all duration-300"></span>
+              </button>
+
+              <span className="text-[18px] font-semibold">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+
+              <button
+                onClick={handleNext}
+                disabled={pagination.page === pagination.totalPages}
+                className="text-[18px] font-medium disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 hover:text-black transition-colors relative group"
+              >
+                Next
+                {pagination.page < pagination.totalPages && (
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-1/2"></span>
+                )}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-current w-0 group-hover:w-[85%] transition-all duration-300"></span>
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };
@@ -189,8 +189,16 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef }) => {
 // ShopPage
 const ShopPage = ({ heading = "Shop Collection" }) => {
   const headingRef = useRef(null);
-  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { slug } = useParams(); // Expected format: "men-kurta" or "women-saree"
+  const [currentPage, setCurrentPage] = useState(1);
 
+  // Parse slug to extract category and subCategory
+  const parsedSlug = slug ? slug.split('-') : [];
+  const category = parsedSlug[0] || ''; // "men", "women", "kids"
+  const subCategory = parsedSlug.slice(1).join('') || ''; // "kurta", "saree", "tshirt"
+
+  // Create display heading
   const finalHeading = slug
     ? slug
       .split('-')
@@ -202,27 +210,47 @@ const ShopPage = ({ heading = "Shop Collection" }) => {
   const firstWord = words[0];
   const restWords = words.slice(1).join(' ');
 
-  const { data: productData, isLoading, isError } = useQuery({
-    queryKey: ["productsByCategory", "smartphones"],
-    queryFn: () => fetchProductsByCategory("smartphones"),
-    enabled: !!slug, // fetch only if slug exists
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["productsByCategory", category, subCategory, currentPage],
+    queryFn: () => fetchProductsByCategory(category, subCategory, currentPage),
+    enabled: !!category && !!subCategory,
   });
 
-  if (isLoading) {
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when category/subcategory changes
+  }, [category, subCategory]);
+
+  if (!category || !subCategory) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
+        <p className="text-lg font-semibold text-gray-900">
+          ❌ Invalid category URL
+        </p>
+        <p className="text-sm text-gray-500">
+          Please select a valid category from the menu.
+        </p>
+        <button
+          onClick={() => navigate('/')}
+          className="px-5 py-2 text-sm font-semibold bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+        >
+          Go Home
+        </button>
       </div>
     );
   }
+
   if (isError) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-4">
         <p className="text-lg font-semibold text-gray-900">
-          ❌ Failed to load product
+          ❌ Failed to load products
         </p>
         <p className="text-sm text-gray-500">
-          The product may not exist or something went wrong.
+          Something went wrong while fetching the products.
         </p>
 
         <div className="flex gap-3 mt-2">
@@ -232,144 +260,16 @@ const ShopPage = ({ heading = "Shop Collection" }) => {
           >
             Go Back
           </button>
-
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2 text-sm font-semibold bg-black text-white rounded-lg hover:bg-gray-800 transition"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
-
-  const defaultProductData = [
-    {
-      image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80",
-      category: "Jackets",
-      name: "Cropped Faux Leather Jacket",
-      price: 129,
-      rating: 4,
-      reviewCount: "8k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&q=80",
-      category: "Dresses",
-      name: "Floral Summer Dress",
-      price: 85,
-      rating: 5,
-      reviewCount: "12k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80",
-      category: "Accessories",
-      name: "Designer Handbag",
-      price: 199,
-      rating: 4,
-      reviewCount: "5k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=400&q=80",
-      category: "Footwear",
-      name: "Classic White Sneakers",
-      price: 95,
-      rating: 5,
-      reviewCount: "15k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&q=80",
-      category: "Tops",
-      name: "Casual Cotton T-Shirt",
-      price: 35,
-      rating: 3,
-      reviewCount: "3k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&q=80",
-      category: "Pants",
-      name: "Slim Fit Jeans",
-      price: 79,
-      rating: 4,
-      reviewCount: "9k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80",
-      category: "Accessories",
-      name: "Leather Belt",
-      price: 45,
-      rating: 4,
-      reviewCount: "2k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=400&q=80",
-      category: "Outerwear",
-      name: "Wool Coat",
-      price: 249,
-      rating: 5,
-      reviewCount: "7k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80",
-      category: "Dresses",
-      name: "Evening Gown",
-      price: 179,
-      rating: 5,
-      reviewCount: "6k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1618932260643-eee4a2f652a6?w=400&q=80",
-      category: "Tops",
-      name: "Silk Blouse",
-      price: 99,
-      rating: 4,
-      reviewCount: "4k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&q=80",
-      category: "Jackets",
-      name: "Bomber Jacket",
-      price: 159,
-      rating: 5,
-      reviewCount: "11k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&q=80",
-      category: "Shorts",
-      name: "Cotton Chino Shorts",
-      price: 55,
-      rating: 4,
-      reviewCount: "7k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80",
-      category: "Hoodies",
-      name: "Pullover Fleece Hoodie",
-      price: 69,
-      rating: 5,
-      reviewCount: "22k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&q=80",
-      category: "Sweaters",
-      name: "Merino Wool Sweater",
-      price: 119,
-      rating: 4,
-      reviewCount: "10k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=400&q=80",
-      category: "Blazers",
-      name: "Tailored Navy Blazer",
-      price: 229,
-      rating: 5,
-      reviewCount: "8k+"
-    },
-    {
-      image: "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=400&q=80",
-      category: "Shirts",
-      name: "Cotton Dress Shirt",
-      price: 65,
-      rating: 5,
-      reviewCount: "18k+"
-    }
-  ];
-
-  const dataToUse = productData || defaultProductData;
 
   return (
     <div className="min-h-screen py-8">
@@ -387,9 +287,11 @@ const ShopPage = ({ heading = "Shop Collection" }) => {
       </h1>
 
       <PaginatedGrid
-        allData={dataToUse}
-        maxPageNumbers={5}
+        allData={data?.products || []}
+        pagination={data?.pagination || {}}
+        onPageChange={handlePageChange}
         scrollRef={headingRef}
+        isLoading={isLoading}
       />
       <MoreOptions />
     </div>

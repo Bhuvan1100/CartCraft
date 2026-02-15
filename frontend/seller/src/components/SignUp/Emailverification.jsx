@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { EnvelopeIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, CheckCircleIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { auth } from '../../Firebase/firebase';
 import { sendEmailVerification } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function VerifyEmail() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [checkingVerification, setCheckingVerification] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
+  const [backendError, setBackendError] = useState('');
 
   useEffect(() => {
     // Get current user email
@@ -37,6 +39,7 @@ export default function VerifyEmail() {
   const handleResendEmail = async () => {
     setResendLoading(true);
     setResendSuccess(false);
+    setBackendError('');
 
     try {
       const user = auth.currentUser;
@@ -48,7 +51,7 @@ export default function VerifyEmail() {
       }
     } catch (error) {
       console.error('Error sending verification email:', error);
-      alert('Failed to resend email. Please try again.');
+      setBackendError('Failed to resend email. Please try again.');
     } finally {
       setResendLoading(false);
     }
@@ -56,22 +59,68 @@ export default function VerifyEmail() {
 
   const handleCheckVerification = async () => {
     setCheckingVerification(true);
+    setBackendError('');
 
     try {
       const user = auth.currentUser;
-      if (user) {
-        // Reload user to get latest email verification status
-        await user.reload();
+      if (!user) {
+        navigate('/signup');
+        return;
+      }
 
-        if (user.emailVerified) {
-          // Email is verified, navigate to dashboard or home
-          navigate('/'); // Change this to your desired route
-        } else {
-          alert('Email not verified yet. Please check your inbox and click the verification link.');
+      // Reload user to get latest email verification status
+      await user.reload();
+
+      if (!user.emailVerified) {
+        setBackendError('Email not verified yet. Please check your inbox and click the verification link.');
+        setCheckingVerification(false);
+        return;
+      }
+
+      // ✅ Email is verified in Firebase, now call backend
+      try {
+        const response = await axios.post(
+          'api/auth/signup',
+          { email: user.email },
+          { withCredentials: true }
+        );
+
+        // ✅ Backend success - store ID and navigate
+        localStorage.setItem("id", response.data.id);
+        console.log('User verified and registered in backend successfully!');
+        navigate('/'); // Navigate to dashboard/home
+        
+      } catch (backendError) {
+        console.error('Backend signup failed:', backendError);
+        
+        // ❌ Backend failed - delete Firebase user to force re-signup
+        try {
+          await user.delete();
+          setBackendError(
+            'Server error occurred. Your account has been removed. Please try signing up again in a few moments.'
+          );
+          
+          // Redirect to signup after 4 seconds
+          setTimeout(() => {
+            navigate('/signup');
+          }, 4000);
+          
+        } catch (deleteError) {
+          console.error('Error deleting user:', deleteError);
+          // Fallback: sign out if delete fails
+          await auth.signOut();
+          setBackendError(
+            'Server error occurred. Please try signing up again after some time.'
+          );
+          setTimeout(() => {
+            navigate('/signup');
+          }, 4000);
         }
       }
+      
     } catch (error) {
       console.error('Error checking verification:', error);
+      setBackendError('An error occurred. Please try again.');
     } finally {
       setCheckingVerification(false);
     }
@@ -121,6 +170,18 @@ export default function VerifyEmail() {
             </div>
           )}
 
+          {/* Backend Error Message */}
+          {backendError && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+              <div className="flex items-start">
+                <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mt-0.5 mr-2 shrink-0" />
+                <p className="text-sm text-red-800">
+                  {backendError}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
@@ -128,7 +189,7 @@ export default function VerifyEmail() {
               disabled={checkingVerification}
               className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {checkingVerification ? 'Checking...' : "I've Verified My Email"}
+              {checkingVerification ? 'Verifying...' : "I've Verified My Email"}
             </button>
 
             <button
@@ -144,7 +205,6 @@ export default function VerifyEmail() {
                   : 'Resend Verification Email'
               }
             </button>
-
           </div>
 
           {/* Help Text */}

@@ -1,8 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import useSellerInfoStore from '../../stores/SellerInfoStore';
 
 export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { isComplete } = useSellerInfoStore(); // 👈 added
 
   const isActive = (path) => location.pathname === path;
 
@@ -22,19 +25,23 @@ export default function Header() {
           </div>
 
           <nav className="flex gap-10">
-            <button
-              onClick={() => navigate('/')}
-              className={`relative text-sm font-semibold transition-all duration-200 ${
-                isActive('/')
-                  ? 'text-gray-900'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Seller Detail
-              {isActive('/') && (
-                <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gray-900 rounded-full"></span>
-              )}
-            </button>
+
+            {/* 👇 Hide Seller Detail if profile is complete */}
+            {!isComplete && (
+              <button
+                onClick={() => navigate('/')}
+                className={`relative text-sm font-semibold transition-all duration-200 ${
+                  isActive('/')
+                    ? 'text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Seller Detail
+                {isActive('/') && (
+                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gray-900 rounded-full"></span>
+                )}
+              </button>
+            )}
 
             <button
               onClick={() => navigate('/add-items')}
@@ -63,6 +70,7 @@ export default function Header() {
                 <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-gray-900 rounded-full"></span>
               )}
             </button>
+
           </nav>
         </div>
       </div>

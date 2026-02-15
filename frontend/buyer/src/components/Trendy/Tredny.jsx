@@ -72,7 +72,7 @@ export default function TrendyProductsSection() {
                                 name={product.name}
                                 price={product.price}
                                 rating={product.rating}
-                                reviewCount={product.reviewCount}
+                                ratingCount={product.ratingCount}
                             />
                         </Link>
                     ))}

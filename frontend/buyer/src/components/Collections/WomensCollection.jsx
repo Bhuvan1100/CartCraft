@@ -1,103 +1,126 @@
-// WomensCollections.jsx
 import Mainmarket from "../Shop/Mainmarket";
 
 export default function WomensCollections(){
     const womensCollectionsData = [
   {
-    image: "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=400&q=80",
-    category: "Dresses",
-    name: "Summer Dresses",
-    itemCount: "200+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1594633313593-bab3825d0caf?w=400&q=80",
-    category: "Tops",
-    name: "Casual Tops",
-    itemCount: "250+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&q=80",
-    category: "Jeans",
-    name: "Skinny Jeans",
+    image: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&q=80",
+    category: "saree",
+    name: "Women's Saree",
     itemCount: "180+ styles"
   },
   {
-    image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80",
-    category: "Handbags",
-    name: "Designer Handbags",
-    itemCount: "120+ styles"
+    image: "https://images.unsplash.com/photo-1617627143750-d86bc393c928?w=400&q=80",
+    category: "kurti",
+    name: "Women's Kurti",
+    itemCount: "220+ styles"
   },
   {
-    image: "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=400&q=80",
-    category: "Skirts",
-    name: "Mini Skirts",
-    itemCount: "90+ styles"
+    image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80",
+    category: "dress",
+    name: "Women's Dresses",
+    itemCount: "200+ styles"
   },
   {
-    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f44a?w=400&q=80",
-    category: "Jackets",
-    name: "Blazers",
-    itemCount: "110+ styles"
+    image: "https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?w=400&q=80",
+    category: "top",
+    name: "Women's Tops",
+    itemCount: "250+ styles"
   },
   {
-    image: "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?w=400&q=80",
-    category: "Sweaters",
-    name: "Knit Sweaters",
+    image: "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&q=80",
+    category: "tshirt",
+    name: "Women's T-Shirts",
+    itemCount: "190+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&q=80",
+    category: "jeans",
+    name: "Women's Jeans",
+    itemCount: "180+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1594633313593-bab3825d0caf?w=400&q=80",
+    category: "trousers",
+    name: "Women's Trousers",
     itemCount: "140+ styles"
   },
   {
-    image: "https://images.unsplash.com/photo-1585487000143-3b3a326f0361?w=400&q=80",
-    category: "Pants",
-    name: "Wide Leg Pants",
-    itemCount: "95+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400&q=80",
-    category: "Coats",
-    name: "Winter Coats",
-    itemCount: "75+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=400&q=80",
-    category: "Footwear",
-    name: "Heels & Pumps",
-    itemCount: "160+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1612423284934-2850a4ea6b0f?w=400&q=80",
-    category: "Activewear",
-    name: "Yoga Pants",
-    itemCount: "130+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?w=400&q=80",
-    category: "Blouses",
-    name: "Silk Blouses",
-    itemCount: "105+ styles"
-  },
-  {
     image: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&q=80",
-    category: "Shorts",
-    name: "Denim Shorts",
-    itemCount: "85+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1591085686350-798c0f9faa7f?w=400&q=80",
-    category: "Jumpsuits",
-    name: "Casual Jumpsuits",
-    itemCount: "65+ styles"
-  },
-  {
-    image: "https://images.unsplash.com/photo-1544441893-675973e31985?w=400&q=80",
-    category: "Accessories",
-    name: "Scarves",
-    itemCount: "100+ styles"
+    category: "skirt",
+    name: "Women's Skirts",
+    itemCount: "120+ styles"
   },
   {
     image: "https://images.unsplash.com/photo-1590330297626-d7aff25a0431?w=400&q=80",
-    category: "Leggings",
-    name: "Fashion Leggings",
+    category: "leggings",
+    name: "Women's Leggings",
     itemCount: "150+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=400&q=80",
+    category: "ethnicset",
+    name: "Women's Ethnic Sets",
+    itemCount: "100+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=400&q=80",
+    category: "gown",
+    name: "Women's Gowns",
+    itemCount: "90+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1591369822096-ffd140ec948f?w=400&q=80",
+    category: "blazer",
+    name: "Women's Blazers",
+    itemCount: "85+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1578932750294-f5075e85f44a?w=400&q=80",
+    category: "jacket",
+    name: "Women's Jackets",
+    itemCount: "130+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1576871337632-b9aef4c17ab9?w=400&q=80",
+    category: "sweater",
+    name: "Women's Sweaters",
+    itemCount: "140+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1615969022634-c11e65ca6b86?w=400&q=80",
+    category: "nightwear",
+    name: "Women's Nightwear",
+    itemCount: "95+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80",
+    category: "activewear",
+    name: "Women's Activewear",
+    itemCount: "170+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1606392011638-b0fb0c46aca9?w=400&q=80",
+    category: "lingerie",
+    name: "Women's Lingerie",
+    itemCount: "110+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1575361204480-e557e2f28f7f?w=400&q=80",
+    category: "swimwear",
+    name: "Women's Swimwear",
+    itemCount: "70+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=400&q=80",
+    category: "footwear",
+    name: "Women's Footwear",
+    itemCount: "200+ styles"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=400&q=80",
+    category: "accessories",
+    name: "Women's Accessories",
+    itemCount: "160+ styles"
   }
 ];
 

@@ -11,6 +11,7 @@ import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
 import useUserStore from '../../Stores/UserStore';
 import useThemeStore from '../../Stores/ThemeStore';
+import axios from 'axios'
 
 // Initialize Google Provider
 const googleProvider = new GoogleAuthProvider();
@@ -26,7 +27,7 @@ export default function SignupPage() {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -92,23 +93,49 @@ export default function SignupPage() {
     setIsLoading(true);
     setErrors({});
     setSuccessMessage('');
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      const credential = GoogleAuthProvider.credentialFromResult(result);
+
+      if (!user) throw new Error('No user found after Google sign-in');
+
+      const email = user.email;
+
+      // Call backend
+      const response = await axios.post(
+        'api/auth/signup',
+        { email },
+        { withCredentials: true }
+      );
+
+      localStorage.setItem("id", response.data.id);
+      console.log('Signed up successfully both Firebase and backend!');
+
       setSuccessMessage(`Signed in successfully.`);
       setFormData({ email: '', password: '' });
-      useUserStore.getState().setLoginStatus(true,user.email);
+      useUserStore.getState().setLoginStatus(true, user.email);
+
       setTimeout(() => {
         navigate("/");
       }, 2000);
-      console.log('User signed in with Google:', user);
-      console.log('Access token:', credential?.accessToken);
+
     } catch (error) {
       console.error('Google signup error:', error);
-      setErrors({ general: getErrorMessage(error.code) });
-      const credential = GoogleAuthProvider.credentialFromError(error);
-      console.error('Failed credential:', credential);
+
+      // Only delete if user exists
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await currentUser.delete();
+        } catch (deleteError) {
+          console.error('Error deleting user:', deleteError);
+          // Fallback to sign out if delete fails
+          await auth.signOut();
+        }
+      }
+
+      setErrors({ general: 'Signup failed: try signing up after some time' });
     } finally {
       setIsLoading(false);
     }

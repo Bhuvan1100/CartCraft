@@ -53,7 +53,7 @@ export default function ProductCard({
   name = "Cropped Faux Leather Jacket",
   price = 29,
   rating = 3,
-  reviewCount = "8k+"
+  ratingCount = "8k+"
 }) {
   return (
     <div className="w-full max-w-sm bg-white rounded-lg overflow-hidden">
@@ -87,7 +87,7 @@ export default function ProductCard({
               />
             ))}
           </div>
-          <span className="text-sm text-gray-600">{reviewCount} reviews</span>
+          <span className="text-sm text-gray-600">{ratingCount} ratings</span>
         </div>
       </div>
     </div>

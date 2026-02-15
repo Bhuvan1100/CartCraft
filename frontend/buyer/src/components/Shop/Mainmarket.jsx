@@ -66,7 +66,7 @@ const PaginatedGrid = ({ allData = [], maxPageNumbers = 5, scrollRef, firstWord 
         {currentItems.map((item, index) => (
           <Link
             key={index}
-            to={`/category/${firstWord}-${item.name
+            to={`/category/${firstWord}-${item.category
               .toLowerCase()
               .trim()
               .replace(/\s+/g, "-")}`} // change route if needed

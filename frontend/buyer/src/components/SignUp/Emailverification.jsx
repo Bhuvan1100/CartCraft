@@ -5,6 +5,7 @@ import useUserStore from '../../Stores/UserStore';
 import { auth } from '../../Firebase/firebase';
 import { useNavigate } from "react-router-dom";
 import useThemeStore from '../../Stores/ThemeStore';
+import axios from 'axios';
 
 export default function VerifyEmailPage() {
   const { darkMode } = useThemeStore();
@@ -51,29 +52,74 @@ export default function VerifyEmailPage() {
   };
 
   const checkVerification = async () => {
-    if (!user) {
-      setErrors({ general: 'No user logged in. Please sign up or log in.' });
-      return;
-    }
-
     setIsLoading(true);
     setErrors({});
-    
+    setSuccessMessage('');
+
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        navigate('/signup');
+        return;
+      }
+
+      // Reload user to get latest email verification status
       await user.reload();
-      
-      if (user.emailVerified) {
+
+      if (!user.emailVerified) {
+        setErrors({ general: 'Email not verified yet. Please check your inbox and click the verification link.' });
+        setIsLoading(false);
+        return;
+      }
+
+      // ✅ Email is verified in Firebase, now call backend
+      try {
+        const response = await axios.post(
+          'api/auth/signup',
+          { email: user.email },
+          { withCredentials: true }
+        );
+
+        // ✅ Backend success - store ID and navigate
+        localStorage.setItem("id", response.data.id);
+        console.log('User verified and registered in backend successfully!');
         setSuccessMessage('Email verified successfully! Redirecting...');
         useUserStore.getState().setLoginStatus(true, user.email);
         setTimeout(() => {
           navigate('/');
         }, 1500);
-      } else {
-        setErrors({ general: 'Email not verified yet. Please check your inbox and click the verification link.' });
+        
+      } catch (backendError) {
+        console.error('Backend signup failed:', backendError);
+        
+        // ❌ Backend failed - delete Firebase user to force re-signup
+        try {
+          await user.delete();
+          setErrors({
+            general: 'Server error occurred. Your account has been removed. Please try signing up again in a few moments.'
+          });
+          
+          // Redirect to signup after 4 seconds
+          setTimeout(() => {
+            navigate('/signup');
+          }, 4000);
+          
+        } catch (deleteError) {
+          console.error('Error deleting user:', deleteError);
+          // Fallback: sign out if delete fails
+          await auth.signOut();
+          setErrors({
+            general: 'Server error occurred. Please try signing up again after some time.'
+          });
+          setTimeout(() => {
+            navigate('/signup');
+          }, 4000);
+        }
       }
+      
     } catch (error) {
-      console.error('Check verification error:', error);
-      setErrors({ general: 'Failed to check verification status. Please try again.' });
+      console.error('Error checking verification:', error);
+      setErrors({ general: 'An error occurred. Please try again.' });
     } finally {
       setIsLoading(false);
     }

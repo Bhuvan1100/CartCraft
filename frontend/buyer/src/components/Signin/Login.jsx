@@ -3,16 +3,19 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  signOut
 } from 'firebase/auth';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { auth } from '../../Firebase/firebase';
 import useUserStore from '../../Stores/UserStore';
 import useThemeStore from '../../Stores/ThemeStore';
 
 // Initialize Google Provider
 const googleProvider = new GoogleAuthProvider();
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const { darkMode } = useThemeStore();
@@ -24,7 +27,7 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const { isLoggedIn,setLoginStatus } = useUserStore();
+  const { isLoggedIn, setLoginStatus } = useUserStore();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,6 +62,41 @@ export default function LoginPage() {
     }
   };
 
+  // 🔥 NEW: Backend login function
+  const backendLogin = async (firebaseUser) => {
+    try {
+      const response = await axios.post(
+        "api/auth/login",
+        { email: firebaseUser.email },
+        { withCredentials: true }
+      );
+
+      if (!response.data || !response.data.id) {
+        throw new Error("Invalid backend response");
+      }
+
+      // Store as "Id" (capital I key)
+      localStorage.setItem("id", response.data.id);
+
+      setLoginStatus(true, firebaseUser.email);
+      setSuccessMessage(`Signed in successfully.`);
+
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+
+    } catch (error) {
+      await signOut(auth);
+
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        "Backend authentication failed.";
+
+      setErrors({ general: message });
+    }
+  };
+
   const handleEmailSignin = async () => {
     if (!validateForm()) return;
     setIsLoading(true);
@@ -70,13 +108,11 @@ export default function LoginPage() {
         formData.email,
         formData.password
       );
-      setSuccessMessage(`Signed in successfully.`);
-      useUserStore.getState().setLoginStatus(true, formData.email);
+
+      await backendLogin(userCredential.user);
+
       setFormData({ email: '', password: '' });
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-      setLoginStatus(true);
+
       console.log('User signed in:', userCredential.user);
     } catch (error) {
       console.error('Signin error:', error);
@@ -93,20 +129,15 @@ export default function LoginPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      setSuccessMessage(`Signed in successfully.`);
-      useUserStore.getState().setLoginStatus(true, user.email);
+
+      await backendLogin(user);
+
       setFormData({ email: '', password: '' });
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+
       console.log('User signed in with Google:', user);
-      console.log('Access token:', credential?.accessToken);
     } catch (error) {
       console.error('Google signin error:', error);
       setErrors({ general: getErrorMessage(error.code) });
-      const credential = GoogleAuthProvider.credentialFromError(error);
-      console.error('Failed credential:', credential);
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +151,6 @@ export default function LoginPage() {
     <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="w-full max-w-md">
 
-        {/* Title */}
         <div className="text-center mb-10">
           <h1 className={`text-xl font-medium tracking-wider pb-2 relative inline-block ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             LOGIN
@@ -128,17 +158,14 @@ export default function LoginPage() {
           </h1>
         </div>
 
-        {/* Form Card */}
         <div className={`rounded-lg p-8 transition-all duration-300 ${darkMode ? 'bg-gray-800/50' : 'bg-white'}`}>
 
-          {/* Success Message */}
           {successMessage && (
             <div className={`mb-6 p-4 rounded-lg animate-fade-in ${darkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-50 text-green-700'}`}>
               {successMessage}
             </div>
           )}
 
-          {/* Error Message */}
           {errors.general && (
             <div className={`mb-6 p-4 rounded-lg animate-fade-in ${darkMode ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-700'}`}>
               {errors.general}
@@ -147,7 +174,6 @@ export default function LoginPage() {
 
           <div className="space-y-6">
 
-            {/* Email Input */}
             <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
               <div className={`relative ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'} rounded border ${errors.email ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                 <input
@@ -164,7 +190,6 @@ export default function LoginPage() {
               {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
-            {/* Password Input */}
             <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <div className={`relative ${darkMode ? 'bg-gray-700/50' : 'bg-gray-50'} rounded border ${errors.password ? 'border-red-500' : darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                 <input
@@ -189,7 +214,6 @@ export default function LoginPage() {
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
             </div>
 
-            {/* Login Button */}
             <button
               onClick={handleEmailSignin}
               disabled={isLoading}
@@ -198,7 +222,6 @@ export default function LoginPage() {
               {isLoading ? 'SIGNING IN...' : 'LOGIN'}
             </button>
 
-            {/* Divider */}
             <div className="relative my-6 animate-slide-up" style={{ animationDelay: '0.5s' }}>
               <div className="absolute inset-0 flex items-center">
                 <div className={`w-full border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}></div>
@@ -208,7 +231,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Google Sign In Button */}
             <button
               onClick={handleGoogleSignin}
               disabled={isLoading}
@@ -224,7 +246,7 @@ export default function LoginPage() {
               Sign in with Google
             </button>
 
-            {/* Don't have account */}
+
             <p className={`text-sm mt-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Don't have an account?{' '}
               <Link

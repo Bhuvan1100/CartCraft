@@ -11,7 +11,7 @@ export const fetchProductsByTags = async () => {
     name: p.title,
     price: p.price,
     rating: p.rating,
-    reviewCount: `${Math.floor(Math.random() * 10 + 1)}k+`,
+    ratingCount: `${Math.floor(Math.random() * 10 + 1)}k+`,
     tags: ['ALL', 'NEW ARRIVALS', 'BEST SELLER', 'TOP RATED'],
   });
 
@@ -49,56 +49,68 @@ export const fetchProductsByTags = async () => {
 };
 
 export const fetchProductById = async (id) => {
-  // Main product
-  const productRes = await axios.get(
-    `https://dummyjson.com/products/${id}`
-  );
-  const p = productRes.data;
+  try {
+    // Fetch product from your backend
+    const productRes = await axios.get(
+      `http://localhost:4000/product/productdetail/${id}`,
+      {
+        withCredentials:true
+      }
+    );
+    
+    const p = productRes.data.product;
 
-  return {
-    product: {
-      id: p.id,
-      name: p.title,
-      price: p.price,
-      originalPrice: Math.round(
-        p.price / (1 - p.discountPercentage / 100)
-      ),
-      rating: p.rating,
-      totalReviews: Math.floor(p.rating * 70),
-      description: p.description,
-      images: p.images,
-      inStock: p.stock > 0,
+    // Calculate original price from discount if available
+    const originalPrice = p.price; // You can add discount logic if needed
+    
+    return {
+      product: {
+        id: p.id,
+        name: p.title,
+        price: p.price,
+        originalPrice: originalPrice,
+        rating: p.avgRating || 0,
+        totalReviews: p.ratingCount || 0,
+        description: p.description,
+        images: p.images?.map(img => img.url) || [],
+        inStock: p.totalQuantity > 0,
+        
+        // ✅ ADD THESE FIELDS
+        category: p.category,
+        subCategory: p.subCategory,
+        
+        // Include variants if needed
+        variants: p.variants || [],
+      },
 
-      // ✅ ADD THIS
-      features: [
-        `Brand: ${p.brand}`,
-        `Category: ${p.category}`,
-        "High quality build",
-        "Fast delivery available",
-        "Warranty included",
-      ],
-    },
+      // Additional info
+      additionalInfo: {
+        category: p.category,
+        subCategory: p.subCategory,
+        warranty: "1 Year Manufacturer Warranty",
+        returnPolicy: "7 Days Replacement",
+        delivery: "Free Delivery in 3-5 days",
+        totalQuantity: p.totalQuantity,
+      },
 
-    // 👇 extra info (for ProductInfo tab)
-    additionalInfo: {
-      brand: p.brand,
+      // Map comments to reviews format
+      reviews: (p.comments || []).map((comment, i) => ({
+        id: i + 1,
+        user: comment.userEmail || `User ${i + 1}`,
+        userId: comment.userId,
+        rating: p.avgRating || 4, // Use product's avg rating
+        comment: comment.comment,
+        createdAt: comment.createdAt,
+      })),
+      
       category: p.category,
-      warranty: "1 Year Manufacturer Warranty",
-      returnPolicy: "7 Days Replacement",
-      delivery: "Free Delivery in 3-5 days",
-    },
-
-    // 👇 reviews (mocked but deterministic)
-    reviews: Array.from({ length: 5 }).map((_, i) => ({
-      id: i + 1,
-      user: `User ${i + 1}`,
-      rating: Math.max(3, Math.floor(p.rating)),
-      comment: "Good quality product, worth the price.",
-    })),
-    category:p.category,
-
-  };
+    };
+  } catch (error) {
+    console.error('[FETCH_PRODUCT_BY_ID] Error:', error);
+    throw error;
+  }
 };
+
 
 export const fetchSimilarProducts = async ({ category, excludeId }) => {
   if (!category) return [];
@@ -122,20 +134,169 @@ export const fetchSimilarProducts = async ({ category, excludeId }) => {
   return filtered;
 };
 
-export const fetchProductsByCategory = async (category,limit) => {
-  if (!category) return [];
+export const fetchProductsByCategory = async (category, subCategory, page = 1) => {
+  if (!category || !subCategory) return { products: [], pagination: {} };
+  // console.log(page*page);
+  try {
+    // Convert to match Prisma enum format
+    // category: "men" -> "MEN"
+    // subCategory: "kurta" -> "MEN_KURTA"
+    const formattedCategory =
+      category.toLowerCase() === "mens"
+        ? "men"
+        : category.toLowerCase() === "womens"
+          ? "women"
+          : category.toLowerCase() === "kids"
+            ? "kids"
+            : category.toLowerCase();
+    // "MEN", "WOMEN", "KIDS"
+    const formattedSubCategory = `${subCategory.toLowerCase()}`; // "MEN_KURTA", "WOMEN_SAREE"
 
-  const res = await axios.get(
-    `https://dummyjson.com/products/category/${category}?limit${limit}`
-  );
+    const res = await axios.get(  
+      `http://localhost:4000/products/${formattedCategory}/${subCategory}?page=${page}`,
+      {
+        withCredentials: true
+      }
+    );
 
-  return res.data.products.map(p => ({
-    id:p.id,
-    image: p.thumbnail,
-    category: p.category,
-    name: p.title,
-    price: p.price,
-    rating: Math.round(p.rating),
-    reviewCount: `${Math.floor(Math.random() * 10 + 1)}k+`,
-  }));
+
+    console.log(page, res.data);
+
+    return {
+      products: res.data.products.map(p => ({
+        id: p.id,
+        image: p.image,
+        category: subCategory,
+        name: p.title,
+        price: p.price,
+        rating: Math.round(p.avgRating || 0),
+        ratingCount: p.ratingCount ? `${p.ratingCount}+` : '0',
+        description: p.description,
+        totalQuantity: p.totalQuantity,
+        isInStock: p.isInStock
+      })),
+      pagination: res.data.pagination
+    };
+  } catch (error) {
+    console.error('Error fetching products by category:', error);
+    return { products: [], pagination: {} };
+  }
+};
+
+// ✅ NEW FUNCTIONS FOR CART AND ORDERS
+
+/**
+ * Fetch cart items for the logged-in user
+ * @returns {Promise<Object>} Cart data with items and total price
+ */
+export const fetchCartItems = async (email) => {
+  try {
+    const userId = localStorage.getItem('id');
+
+    if (!userId) {
+      console.error('[FETCH_CART_ITEMS] No userId found in localStorage');
+      return {
+        cartId: null,
+        status: null,
+        totalPrice: 0,
+        items: []
+      };
+    }
+
+    console.log('[FETCH_CART_ITEMS] Fetching cart for userId:', userId);
+
+    const response = await axios.post(
+      '/api/buyer/cart/getcart',
+      { userId, email },
+      { withCredentials: true }
+    );
+
+    console.log('[FETCH_CART_ITEMS] Success:', response.data);
+
+    return {
+      cartId: response.data.cartId || null,
+      status: response.data.status || null,
+      totalPrice: response.data.totalPrice || 0,
+      items: response.data.items || []
+    };
+
+  } catch (error) {
+    console.error('[FETCH_CART_ITEMS] Error:', error);
+    return {
+      cartId: null,
+      status: null,
+      totalPrice: 0,
+      items: []
+    };
+  }
+};
+
+/**
+ * Fetch buyer orders for the logged-in user
+ * @returns {Promise<Array>} Array of orders
+ */
+export const fetchBuyerOrders = async () => {
+  try {
+    const userId = localStorage.getItem('id');
+
+    if (!userId) {
+      console.error('[FETCH_BUYER_ORDERS] No userId found in localStorage');
+      return [];
+    }
+
+    console.log('[FETCH_BUYER_ORDERS] Fetching orders for userId:', userId);
+
+    const response = await axios.post(
+      '/api/buyer/orders',
+      { userId },
+      { withCredentials: true }
+    );
+
+    console.log('[FETCH_BUYER_ORDERS] Success:', response.data);
+
+    return response.data.orders || [];
+
+  } catch (error) {
+    console.error('[FETCH_BUYER_ORDERS] Error:', error);
+    return [];
+  }
+};
+
+/**
+ * Main function to fetch all user data (cart + orders) in parallel
+ * This is the function you'll call from App.jsx after login confirmation
+ * @param {string} email - User's email from UserStore
+ * @returns {Promise<Object>} Object containing cart and orders data
+ */
+export const fetchUserData = async (email) => {
+  console.log('[FETCH_USER_DATA] Starting parallel fetch of cart and orders...');
+
+  try {
+    // Fetch both cart and orders in parallel for better performance
+    const [cartData, ordersData] = await Promise.all([
+      fetchCartItems(email),
+      fetchBuyerOrders()
+    ]);
+
+    console.log('[FETCH_USER_DATA] ✅ Successfully fetched all user data');
+
+    return {
+      cart: cartData,
+      orders: ordersData
+    };
+
+  } catch (error) {
+    console.error('[FETCH_USER_DATA] ❌ Failed to fetch user data:', error);
+    
+    // Return empty data structure on error
+    return {
+      cart: {
+        cartId: null,
+        status: null,
+        totalPrice: 0,
+        items: []
+      },
+      orders: []
+    };
+  }
 };

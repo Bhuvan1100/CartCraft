@@ -6,7 +6,7 @@ const useThemeStore = create(
     (set) => ({
       darkMode: true,
       toggleDarkMode: () =>
-        set((state) => ({ darkMode: !state.darkMode })),
+        set((state) => ({ darkMode: state.darkMode })),
     }),
     {
       name: "theme-storage",

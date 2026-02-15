@@ -1,11 +1,14 @@
 import { create } from "zustand";
+import axios from 'axios'
 
 const useSellerInfoStore = create((set, get) => ({
   // ===== Seller Info Fields =====
   businessName: "",
-  gstNumber: "",
-  contactName: "",
+  sellerType: "",
+  email: "",
   phone: "",
+  panNumber: "",
+  gstNumber: "",
   address: "",
 
   // ===== Status Flags =====
@@ -25,9 +28,11 @@ const useSellerInfoStore = create((set, get) => ({
   setSellerInfo: (data) => {
     set({
       businessName: data.businessName || "",
-      gstNumber: data.gstNumber || "",
-      contactName: data.contactName || "",
+      sellerType: data.sellerType || "",
+      email: data.email || "",
       phone: data.phone || "",
+      panNumber: data.panNumber || "",
+      gstNumber: data.gstNumber || "",
       address: data.address || "",
       error: null,
     });
@@ -38,17 +43,21 @@ const useSellerInfoStore = create((set, get) => ({
   checkCompletion: () => {
     const {
       businessName,
-      gstNumber,
-      contactName,
+      sellerType,
+      email,
       phone,
+      panNumber,
+      gstNumber,
       address,
     } = get();
 
     const isComplete =
       !!businessName &&
-      !!gstNumber &&
-      !!contactName &&
+      !!sellerType &&
+      !!email &&
       !!phone &&
+      !!panNumber &&
+      !!gstNumber &&
       !!address;
 
     set({ isComplete });
@@ -58,7 +67,7 @@ const useSellerInfoStore = create((set, get) => ({
     set({ loading: true, error: null });
 
     try {
-      const res = await fetch("https://dummyjson.com/users/1");
+      const res = await axios.get("api/seller/seller");
       if (!res.ok) {
         throw new Error("Failed to fetch seller info");
       }
@@ -67,9 +76,11 @@ const useSellerInfoStore = create((set, get) => ({
 
       set({
         businessName: data.company?.name || "",
-        gstNumber: "22AAAAA0000A1Z5", // dummy GST (dummyjson doesn't provide GST)
-        contactName: `${data.firstName || ""} ${data.lastName || ""}`.trim(),
+        sellerType: "BUSINESS", // dummy value (dummyjson doesn't provide this)
+        email: data.email || "",
         phone: data.phone || "",
+        panNumber: "ABCDE1234F", // dummy PAN (dummyjson doesn't provide PAN)
+        gstNumber: "22AAAAA0000A1Z5", // dummy GST (dummyjson doesn't provide GST)
         address: `${data.address?.address || ""}, ${data.address?.city || ""}, ${data.address?.state || ""}, ${data.address?.postalCode || ""}`,
         loading: false,
       });
@@ -87,9 +98,11 @@ const useSellerInfoStore = create((set, get) => ({
   resetSellerInfo: () =>
     set({
       businessName: "",
-      gstNumber: "",
-      contactName: "",
+      sellerType: "",
+      email: "",
       phone: "",
+      panNumber: "",
+      gstNumber: "",
       address: "",
       isComplete: false,
       loading: false,

@@ -1,50 +1,117 @@
 import { useState } from 'react';
 import { EnvelopeIcon, LockClosedIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../../Firebase/firebase'; // Import your firebase config
+import { auth } from '../../Firebase/firebase';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+/* ---------------- LocalStorage ID Normalizer (LOGIC ONLY) ---------------- */
+const normalizeUserIdInLocalStorage = (newId) => {
+  const possibleKeys = [
+    'id', 'Id', 'ID', 'userId', 'userid', 'user_id', 'UID'
+  ];
+  possibleKeys.forEach((key) => {
+    if (localStorage.getItem(key)) {
+      localStorage.removeItem(key);
+    }
+  });
+  localStorage.setItem('id', String(newId));
+};
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
+  /* ---------------- Email / Password Sign In ---------------- */
   const handleEmailSignIn = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate('/add-items')
-      // Redirect or handle successful sign in
-      console.log('Signed in successfully');
+      // 1️⃣ Firebase sign in
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      if (!user) throw new Error('No Firebase user found');
+
+      // 2️⃣ Backend sign in
+      const response = await axios.post(
+        '/api/auth/login',
+        { email: user.email },
+        { withCredentials: true }
+      );
+      console.log('Backend signin success:', response.data);
+
+      // ✅ ONLY ADDITION: normalize backend id
+      if (response.data?.id) {
+        normalizeUserIdInLocalStorage(response.data.id);
+      }
+
+      // 3️⃣ Success → home
+      navigate('/');
     } catch (err) {
-      setError(err.message);
+      console.error('Signin failed:', err);
+
+      // 4️⃣ Logout from Firebase on failure
+      if (auth.currentUser) {
+        await auth.signOut();
+      }
+
+      setError('Signin failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------------- Google Sign In ---------------- */
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
 
     try {
+      // 1️⃣ Firebase Google sign in
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // Redirect or handle successful sign in
-      navigate('/add-items')
-      console.log('Signed in with Google');
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      if (!user) throw new Error('No Firebase user after Google signin');
+
+      // 2️⃣ Backend sign in
+      const response = await axios.post(
+        '/api/auth/login',
+        { email: user.email },
+        { withCredentials: true }
+      );
+      console.log('Google signin success:', response.data);
+
+      // ✅ ONLY ADDITION: normalize backend id
+      if (response.data?.id) {
+        normalizeUserIdInLocalStorage(response.data.id);
+      }
+
+      // 3️⃣ Success → home
+      navigate('/');
     } catch (err) {
-      setError(err.message);
+      console.error('Google signin failed:', err);
+
+      // 4️⃣ Logout Firebase on failure
+      if (auth.currentUser) {
+        await auth.signOut();
+      }
+
+      setError('Google signin failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-linear-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
@@ -62,7 +129,7 @@ export default function SignIn() {
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">Already have an account?</p>
                 <p className="text-blue-700">
-                  If you have an account on our e-commerce store, you can use the same credentials to sign in here.
+                  Use the same credentials as the e-commerce store.
                 </p>
               </div>
             </div>
@@ -112,7 +179,7 @@ export default function SignIn() {
             </div>
           </div>
 
-          {/* Email/Password Form */}
+          {/* Email Form */}
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             {/* Email */}
             <div>
@@ -126,10 +193,10 @@ export default function SignIn() {
                 <input
                   type="email"
                   id="email"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -147,30 +214,20 @@ export default function SignIn() {
                 <input
                   type="password"
                   id="password"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  placeholder="••••••••"
                   required
                 />
               </div>
             </div>
 
-            {/* Forgot Password */}
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-              >
-                Forgot password?
-              </button>
-            </div>
-
-            {/* Submit Button */}
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gray-900 text-white py-2.5 px-4 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -181,12 +238,11 @@ export default function SignIn() {
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
               <button
-                onClick={() => navigate("/signup")}
-                className="cursor-pointer text-purple-600 hover:text-purple-700 font-medium"
+                onClick={() => navigate('/signup')}
+                className="text-purple-600 cursor-pointer hover:text-purple-700 font-medium"
               >
                 Sign up
               </button>
-
             </p>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { EnvelopeIcon, LockClosedIcon, ExclamationCircleIcon } from '@heroicons/
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendEmailVerification } from 'firebase/auth';
 import { auth } from '../../Firebase/firebase';
 import { useNavigate } from 'react-router-dom'; // Make sure to install react-router-dom
+import axios from 'axios'
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -71,12 +72,37 @@ export default function SignUp() {
 
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // Google accounts are automatically verified
-      // Redirect to dashboard or home
-      console.log('Signed up with Google');
+      const result = await signInWithPopup(auth, provider); // ✅ Capture result
+      const user = result.user; // ✅ Get user from result, not auth.currentUser
+
+      if (!user) throw new Error('No user found after Google sign-in');
+
+      const email = user.email;
+
+      // Call backend
+      const response = await axios.post(
+        'api/auth/signup',
+        { email },
+        { withCredentials: true }
+      );
+
+      localStorage.setItem("id", response.data.id);
+      console.log('Signed up successfully both Firebase and backend!');
+      navigate('/');
+
     } catch (err) {
-      setError(err.message);
+      // ✅ Only delete if user exists
+      const user = auth.currentUser;
+      if (user) {
+        try {
+          await user.delete();
+        } catch (deleteError) {
+          console.error('Error deleting user:', deleteError);
+          // Fallback to sign out if delete fails
+          await auth.signOut();
+        }
+      }
+      setError('Signup failed: try signing up after some time');
     } finally {
       setLoading(false);
     }
