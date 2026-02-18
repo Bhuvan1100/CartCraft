@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { toast } from "sonner";
 import useUserStore from "../../Stores/UserStore";
 import LoadingSpinner from "../Spinner/Spinner";
 import {
@@ -9,70 +12,104 @@ import {
   ClockIcon,
   CubeIcon,
   CurrencyDollarIcon,
-  MapPinIcon
+  MapPinIcon,
+  ArrowUturnLeftIcon,
 } from "@heroicons/react/24/outline";
 
+// ─── OrderStatus enum → progress stage index ─────────────────────────────────
+const STATUS_TO_STAGE = {
+  ORDER_CREATED:     0,
+  PAYMENT_PENDING:   0,
+  PAID:              0,
+  ORDER_PROCESSING:  1,
+  SHIPPING:          2,
+  DELIVERED:         4,
+  RETURN_WINDOW_OPEN: 4,
+};
+
+const STAGES = ["ORDERED", "PROCESSING", "SHIPPED", "OUT FOR DELIVERY", "DELIVERED"];
+
+const getStageIndex = (status) => STATUS_TO_STAGE[status] ?? 0;
+
+const getStageIcon = (stage) => {
+  switch (stage) {
+    case "ORDERED":          return ShoppingBagIcon;
+    case "PROCESSING":       return CubeIcon;
+    case "SHIPPED":          return TruckIcon;
+    case "OUT FOR DELIVERY": return MapPinIcon;
+    case "DELIVERED":        return CheckCircleIcon;
+    default:                 return ClockIcon;
+  }
+};
+
+const getStatusMessage = (status) => {
+  switch (status) {
+    case "ORDER_CREATED":
+    case "PAID":
+    case "PAYMENT_PENDING":    return "🎉 Your order has been confirmed and is being prepared!";
+    case "ORDER_PROCESSING":   return "📦 Your order is being packed and will ship soon!";
+    case "SHIPPING":           return "🚚 Your order is on its way!";
+    case "DELIVERED":          return "✅ Your order has been delivered!";
+    case "RETURN_WINDOW_OPEN": return "🔄 Your order is eligible for return.";
+    case "RETURN_REQUESTED":   return "↩️ Return requested — we'll process it shortly.";
+    default:                   return "🕐 Checking order status...";
+  }
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function CurrentOrdersPage() {
-  const navigate = useNavigate();
+  const navigate    = useNavigate();
+  const queryClient = useQueryClient();
 
-  const isLoggedIn = useUserStore(state => state.isLoggedIn);
-  const isVerified = useUserStore(state => state.isVerified);
-  const fetchCurrentOrders = useUserStore(state => state.fetchCurrentOrders);
-  const currentOrders = useUserStore(state => state.currentOrders);
-  const [loading, setLoading] = useState(true);
+  const isLoggedIn         = useUserStore((state) => state.isLoggedIn);
+  const isVerified         = useUserStore((state) => state.isVerified);
+  const fetchCurrentOrders = useUserStore((state) => state.fetchCurrentOrders);
 
+  const userId = localStorage.getItem("id");
+
+  // Auth guard
   useEffect(() => {
-    const checkAuthAndFetch = async () => {
-      if (!isLoggedIn) {
-        navigate("/login");
-        return;
-      }
-      if (!isVerified) {
-        navigate("/verify-email");
-        return;
-      }
-      try {
-        await fetchCurrentOrders();
-      } catch (err) {
-        console.error("Failed to fetch orders:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!isLoggedIn) navigate("/login");
+    else if (!isVerified) navigate("/verify-email");
+  }, [isLoggedIn, isVerified, navigate]);
 
-    checkAuthAndFetch();
-  }, [isLoggedIn, navigate, isVerified, fetchCurrentOrders]);
+  // ── TanStack Query ────────────────────────────────────────────────────────
+  const { data: currentOrders = [], isLoading, isError } = useQuery({
+    queryKey: ["currentOrders", userId],
+    queryFn: async () => {
+      await fetchCurrentOrders();
+      return useUserStore.getState().currentOrders ?? [];
+    },
+    enabled: !!isLoggedIn && !!isVerified && !!userId,
+    staleTime: 1000 * 60 * 2,
+    retry: 2,
+  });
 
-  // Generate random progress for demo (in real app, this would come from backend)
-  const getOrderProgress = (orderId) => {
-    const seed = orderId * 17; // Deterministic random based on ID
-    const stages = ['ORDERED', 'PACKED', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
-    const currentStageIndex = seed % 4; // 0-3, never fully delivered for current orders
-    return {
-      currentStage: stages[currentStageIndex],
-      currentStageIndex,
-      stages
-    };
+  // ── Return mutation ───────────────────────────────────────────────────────
+  const { mutate: requestReturn, isPending: isReturning } = useMutation({
+    mutationFn: (orderId) =>
+      axios.post(
+        "/api/buyer/orders/return",
+        { orderId },
+        { withCredentials: true }
+      ),
+    onSuccess: () => {
+      toast.success("Return requested successfully!");
+      queryClient.invalidateQueries({ queryKey: ["currentOrders"] });
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.message || "Failed to request return. Try again.";
+      toast.error(msg);
+    },
+  });
+
+  const handleReturn = (e, orderId) => {
+    e.stopPropagation(); // prevent card click from firing
+    requestReturn(orderId);
   };
 
-  const getStageColor = (stage, isActive, isPast) => {
-    if (isPast) return "bg-green-500";
-    if (isActive) return "bg-blue-500";
-    return "bg-gray-300";
-  };
-
-  const getStageIcon = (stage) => {
-    switch (stage) {
-      case 'ORDERED': return ShoppingBagIcon;
-      case 'PACKED': return CubeIcon;
-      case 'SHIPPED': return TruckIcon;
-      case 'OUT_FOR_DELIVERY': return MapPinIcon;
-      case 'DELIVERED': return CheckCircleIcon;
-      default: return ClockIcon;
-    }
-  };
-
-  if (loading) {
+  // ── Loading ───────────────────────────────────────────────────────────────
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <LoadingSpinner />
@@ -80,7 +117,27 @@ export default function CurrentOrdersPage() {
     );
   }
 
-  if (!currentOrders || currentOrders.length === 0) {
+  // ── Error ─────────────────────────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 text-lg font-semibold mb-4">
+            Failed to load your orders.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Empty ─────────────────────────────────────────────────────────────────
+  if (currentOrders.length === 0) {
     return (
       <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
@@ -89,7 +146,9 @@ export default function CurrentOrdersPage() {
               <TruckIcon className="w-12 h-12 text-blue-600" />
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Current Orders</h1>
-            <p className="text-slate-600 text-lg mb-8">You have no orders in transit at the moment.</p>
+            <p className="text-slate-600 text-lg mb-8">
+              You have no orders in transit at the moment.
+            </p>
             <Link
               to="/shop"
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
@@ -102,9 +161,11 @@ export default function CurrentOrdersPage() {
     );
   }
 
+  // ── Orders list ───────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
+
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">Current Orders</h1>
           <p className="text-slate-600">Track your orders in real-time</p>
@@ -112,59 +173,83 @@ export default function CurrentOrdersPage() {
 
         <div className="space-y-6">
           {currentOrders.map((order) => {
-            const progress = getOrderProgress(order.id);
-            const { currentStage, currentStageIndex, stages } = progress;
+            const stageIndex = getStageIndex(order.status);
+
+            // Return window: 5 days from delivery (updatedAt ≈ when status became DELIVERED)
+            const isReturnable = (() => {
+              if (order.status !== "DELIVERED") return false;
+              const daysSinceDelivery = (Date.now() - new Date(order.updatedAt)) / (1000 * 60 * 60 * 24);
+              return daysSinceDelivery <= 5;
+            })();
 
             return (
               <div
-                key={order.id}
-                onClick={() => navigate(`/product/${order.id}`)}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200 cursor-pointer"
+                key={order.orderId}
+                className="bg-white rounded-2xl shadow-lg transition-all duration-300 overflow-hidden border border-slate-200"
               >
+                {/* ── Header ── */}
                 <div className="bg-blue-600 px-6 py-4">
                   <div className="flex items-center justify-between text-white">
                     <div className="flex items-center gap-3">
                       <TruckIcon className="w-6 h-6" />
-                      <span className="font-semibold">In Transit</span>
+                      <span className="font-semibold">
+                        {order.status?.replace(/_/g, " ")}
+                      </span>
                     </div>
                     <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
-                      Order #{order.id}
+                      Order #{order.orderId.slice(0, 8).toUpperCase()}
                     </span>
                   </div>
                 </div>
 
                 <div className="p-6">
-                  <h3 className="text-2xl font-bold text-slate-900 mb-6">{order.title}</h3>
+                  {/* Placed on */}
+                  <p className="text-xs text-slate-400 mb-6">
+                    Placed on{" "}
+                    {new Date(order.purchasedAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
 
-                  {/* Progress Tracker */}
+                  {/* ── Progress Tracker ── */}
                   <div className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                      {stages.slice(0, -1).map((stage, index) => {
-                        const Icon = getStageIcon(stage);
-                        const isActive = index === currentStageIndex;
-                        const isPast = index < currentStageIndex;
-                        const stageName = stage.replace(/_/g, ' ');
+                    <div className="flex justify-between items-start mb-4">
+                      {STAGES.map((stage, index) => {
+                        const Icon     = getStageIcon(stage);
+                        const isActive = index === stageIndex;
+                        const isPast   = index < stageIndex;
 
                         return (
                           <div key={stage} className="flex-1 relative">
                             <div className="flex flex-col items-center">
                               <div
-                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${isPast ? 'bg-green-500' : isActive ? 'bg-blue-500 ring-4 ring-blue-200' : 'bg-gray-300'
-                                  }`}
+                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-500 ${
+                                  isPast
+                                    ? "bg-green-500"
+                                    : isActive
+                                    ? "bg-blue-500 ring-4 ring-blue-200"
+                                    : "bg-gray-200"
+                                }`}
                               >
                                 <Icon className="w-6 h-6 text-white" />
                               </div>
-                              <div className="mt-2 text-center">
-                                <p className={`text-xs font-semibold ${isPast || isActive ? 'text-slate-900' : 'text-slate-400'
-                                  }`}>
-                                  {stageName}
-                                </p>
-                              </div>
+                              <p
+                                className={`mt-2 text-xs font-semibold text-center leading-tight ${
+                                  isPast || isActive ? "text-slate-900" : "text-slate-400"
+                                }`}
+                              >
+                                {stage}
+                              </p>
                             </div>
-                            {index < stages.length - 2 && (
+                            {index < STAGES.length - 1 && (
                               <div className="absolute top-6 left-1/2 w-full h-1 -z-10">
-                                <div className={`h-full transition-all duration-500 ${index < currentStageIndex ? 'bg-green-500' : 'bg-gray-300'
-                                  }`} />
+                                <div
+                                  className={`h-full transition-all duration-500 ${
+                                    index < stageIndex ? "bg-green-500" : "bg-gray-200"
+                                  }`}
+                                />
                               </div>
                             )}
                           </div>
@@ -172,26 +257,60 @@ export default function CurrentOrdersPage() {
                       })}
                     </div>
 
-                    {/* Current Status Message */}
+                    {/* Status message */}
                     <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                       <p className="text-sm font-medium text-blue-900">
-                        {currentStage === 'ORDERED' && '🎉 Your order has been confirmed and is being prepared!'}
-                        {currentStage === 'PACKED' && '📦 Your order has been packed and is ready to ship!'}
-                        {currentStage === 'SHIPPED' && '🚚 Your order is on the way!'}
-                        {currentStage === 'OUT_FOR_DELIVERY' && '🏃 Out for delivery - arriving soon!'}
+                        {getStatusMessage(order.status)}
                       </p>
                     </div>
                   </div>
 
-                  {/* Order Details */}
+                  {/* ── Items list ── */}
+                  {order.items?.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        Items ({order.itemCount})
+                      </h4>
+                      <div className="space-y-2">
+                        {order.items.map((item) => (
+                          <div
+                            key={item.productVariantId}
+                            onClick={() => navigate(`/product/${item.productId}`)}
+                            className="flex items-center justify-between bg-slate-50 hover:bg-slate-100 rounded-lg px-4 py-3 cursor-pointer transition-colors duration-200"
+                          >
+                            <div className="flex items-center gap-3">
+                              <CubeIcon className="w-5 h-5 text-slate-400 shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">
+                                  {item.title ?? `Product #${item.productId.slice(0, 8)}`}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  Size: {item.size} · Qty: {item.quantity}
+                                </p>
+                              </div>
+                            </div>
+                            <p className="text-sm font-semibold text-slate-700 shrink-0">
+                              ₹{item.lineTotal.toFixed(2)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── Summary row ── */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
-                        <CurrencyDollarIcon className="w-5 h-5 text-purple-600" />
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                        <CurrencyDollarIcon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Unit Price</p>
-                        <p className="text-sm font-semibold text-slate-900">${order.price.toFixed(2)}</p>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Order Total
+                        </p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          ₹{order.totalAmount.toFixed(2)}
+                        </p>
                       </div>
                     </div>
 
@@ -200,21 +319,52 @@ export default function CurrentOrdersPage() {
                         <CubeIcon className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Quantity</p>
-                        <p className="text-sm font-semibold text-slate-900">{order.quantity}</p>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Total Qty
+                        </p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {order.totalQuantity} item{order.totalQuantity !== 1 ? "s" : ""}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                        <CurrencyDollarIcon className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+                        <MapPinIcon className="w-5 h-5 text-purple-600" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total</p>
-                        <p className="text-sm font-semibold text-slate-900">${order.total.toFixed(2)}</p>
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                          Deliver To
+                        </p>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {order.city ? `${order.city}, ${order.state}` : "—"}
+                        </p>
                       </div>
                     </div>
                   </div>
+
+                  {/* ── Return button — only when eligible ── */}
+                  {isReturnable && (
+                    <div className="mt-5 pt-5 border-t border-slate-200">
+                      <button
+                        onClick={(e) => handleReturn(e, order.orderId)}
+                        disabled={isReturning}
+                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+                      >
+                        {isReturning ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            Requesting Return...
+                          </>
+                        ) : (
+                          <>
+                            <ArrowUturnLeftIcon className="w-4 h-4" />
+                            Request Return
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );

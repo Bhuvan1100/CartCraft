@@ -25,6 +25,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import AddressPage from './components/Cart/AddressPage';
 import PaymentPage from './components/Cart/PaymentPage';
 import axios from 'axios'
+import ConfirmCart from './components/Cart/ConfirmCart';
 
 function App() {
 
@@ -33,16 +34,16 @@ function App() {
 
   useEffect(() => {
 
-    // console.log("🚀 App mounted — Setting up Firebase auth listener");
+    console.log("🚀 App mounted — Setting up Firebase auth listener");
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
 
-      // console.log("🔄 onAuthStateChanged triggered");
-      // console.log("👤 Firebase user object:", user);
+      console.log("🔄 onAuthStateChanged triggered");
+      console.log("👤 Firebase user object:", user);
 
       const verifyBackend = async () => {
 
-        // console.log("📡 Calling backend: /api/verifyUser");
+        console.log("📡 Calling backend: /api/verifyUser");
 
         try {
 
@@ -52,41 +53,39 @@ function App() {
             { withCredentials: true }
           );
 
-          // console.log("✅ Backend response:", response.data);
+          console.log("✅ Backend response:", response.data);
 
           if (response.data.authenticated) {
 
-            // console.log("🎉 Backend authentication SUCCESS");
+            console.log("🎉 Backend authentication SUCCESS");
 
             const backendUser = response.data.user;
 
             localStorage.setItem("id", backendUser.userId);
-            // console.log("🆔 Stored userId in localStorage:", backendUser.userId);
+            console.log("🆔 Stored userId in localStorage:", backendUser.userId);
             
 
             useUserStore.getState().setLoginStatus(
               true,
               user.email,
-              user.emailVerified
+              user.emailVerified=true
             );
 
-            // console.log("🟢 Login status set TRUE");
+            console.log("🟢 Login status set TRUE");
             
             // Fetch user data (cart + orders) after successful login
             console.log("📦 Fetching user data (cart & orders)...");
-            await useUserStore.getState().fetchUserData();
-            console.log("✅ User data fetched successfully");
             
             retryRef.current = false;
 
           } else {
 
-            // console.log("⚠️ Backend says NOT authenticated");
+            console.log("⚠️ Backend says NOT authenticated");
 
             // 🟢 Case: Email not verified → do NOT logout
             if (!user.emailVerified) {
 
-              // console.log("📩 Email not verified. Keeping user logged in.");
+              console.log("📩 Email not verified. Keeping user logged in.");
 
               useUserStore.getState().setLoginStatus(
                 true,
@@ -101,26 +100,26 @@ function App() {
             // 🔁 Retry once
             if (user && !retryRef.current) {
 
-              // console.log("🔁 Retrying backend verification once...");
+              console.log("🔁 Retrying backend verification once...");
               retryRef.current = true;
 
               await new Promise(res => setTimeout(res, 500));
               return verifyBackend();
             }
 
-            // console.log("❌ Verified but backend still failing. Logging out...");
+            console.log("❌ Verified but backend still failing. Logging out...");
             await auth.signOut();
             useUserStore.getState().setLoginStatus(false, null, false);
           }
 
         } catch (error) {
 
-          // console.error("🔥 Backend verification ERROR:", error);
+          console.error("🔥 Backend verification ERROR:", error);
 
           // 🟢 If email not verified → DO NOT logout
           if (!user.emailVerified) {
 
-            // console.log("📩 Email not verified & backend failed. NOT logging out.");
+            console.log("📩 Email not verified & backend failed. NOT logging out.");
 
             useUserStore.getState().setLoginStatus(
               true,
@@ -135,36 +134,36 @@ function App() {
           // 🔁 Retry once
           if (user && !retryRef.current) {
 
-            // console.log("🔁 Backend error. Retrying once...");
+            console.log("🔁 Backend error. Retrying once...");
             retryRef.current = true;
 
             await new Promise(res => setTimeout(res, 500));
             return verifyBackend();
           }
 
-          // console.log("❌ Verified user but backend permanently failing. Logging out.");
+          console.log("❌ Verified user but backend permanently failing. Logging out.");
           await auth.signOut();
           useUserStore.getState().setLoginStatus(false, null, false);
 
         } finally {
 
-          // console.log("⏹ Auth loading complete");
+          console.log("⏹ Auth loading complete");
           setAuthLoading(false);
         }
       };
 
       if (!user) {
 
-        // console.log("🚪 No Firebase user found. Setting login false.");
+        console.log("🚪 No Firebase user found. Setting login false.");
 
         useUserStore.getState().setLoginStatus(false, null, false);
         setAuthLoading(false);
 
       } else {
 
-        // console.log("🔐 Firebase user detected");
-        // console.log("📧 Email:", user.email);
-        // console.log("✔️ Email verified:", user.emailVerified);
+        console.log("🔐 Firebase user detected");
+        console.log("📧 Email:", user.email);
+        console.log("✔️ Email verified:", user.emailVerified);
 
         await verifyBackend();
       }
@@ -172,7 +171,7 @@ function App() {
     });
 
     return () => {
-      // console.log("🧹 Cleaning up Firebase auth listener");
+      console.log("🧹 Cleaning up Firebase auth listener");
       unsubscribe();
     };
 
@@ -203,6 +202,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/cart" element={<ShoppingCart />} />
           <Route path="/checkout/address" element={<AddressPage />} />
+          <Route path="/checkout/confirmcart" element={<ConfirmCart />} />
           <Route path="/checkout/payment" element={<PaymentPage />} />
           <Route path="/" element={<Homepage />} />
           <Route path="/profile" element={<UserProfile />} />

@@ -1,70 +1,55 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect } from 'react';
 import { TruckIcon } from '@heroicons/react/24/outline';
-import useCartStore from '../../Stores/ProductStore';
+import { toast } from 'sonner';
+import { fillCheckoutDetails } from '../../Stores/Data';
 import useUserStore from '../../Stores/UserStore';
 
 export default function AddressPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { items } = useCartStore();
-  const { address: storedAddress, fetchUserAddress } = useUserStore();
+  const navigate  = useNavigate();
   const isLoggedIn = useUserStore(state => state.isLoggedIn);
   const isVerified = useUserStore(state => state.isVerified);
-  const total = location.state?.total || 0;
+  const email      = useUserStore(state => state.email);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      navigate("/login", { replace: true });
-    } else if (isLoggedIn && !isVerified) {
-      navigate("/verify-email", { replace: true });
-    }
+    if (!isLoggedIn) navigate("/login", { replace: true });
+    else if (!isVerified) navigate("/verify-email", { replace: true });
   }, [isLoggedIn, isVerified, navigate]);
 
-  const [address, setAddress] = useState({
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: ''
-  });
-
-  // Scroll to top on mount
   useEffect(() => {
+    console.log(localStorage.getItem('checkoutAddress'));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Fetch user address on page load
-  useEffect(() => {
-    fetchUserAddress();
-  }, [fetchUserAddress]);
-
-  // Fill form when address is fetched
-  useEffect(() => {
-    if (storedAddress?.streetAddress) {
-      setAddress({
-        street: storedAddress.streetAddress,
-        city: storedAddress.city,
-        state: storedAddress.state,
-        zipCode: storedAddress.zipCode,
-        country: storedAddress.country,
-      });
+  // Only pre-fill from localStorage — if nothing saved, form stays empty
+  const [address, setAddress] = useState(() => {
+    try {
+      const saved = localStorage.getItem('checkoutAddress');
+      return saved ? JSON.parse(saved) : { street: '', city: '', state: '', zipCode: '', country: '' };
+    } catch {
+      return { street: '', city: '', state: '', zipCode: '', country: '' };
     }
-  }, [storedAddress]);
+  });
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = subtotal * 0.08;
-  const shipping = subtotal > 100 ? 0 : 10;
-  const calculatedTotal = subtotal + tax + shipping;
-
-  const handleSaveAddress = (e) => {
+  const handleSaveAddress = async (e) => {
     e.preventDefault();
-    navigate('/checkout/payment', { state: { address, total: calculatedTotal } });
+    localStorage.setItem('checkoutAddress', JSON.stringify(address));
+    console.log('address:', address);
+    try {
+      const res = await fillCheckoutDetails(address, email);
+      sessionStorage.setItem('sessionId', res.sessionId);
+      console.log(sessionStorage.getItem('sessionId'));
+      navigate('/checkout/confirmcart');
+    } catch (error) {
+      console.error('[FILL_CHECKOUT_DETAILS] Failed:', error);
+      toast.error("Failed to save address. Please try again.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -74,36 +59,9 @@ export default function AddressPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Products Summary */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-            <div className="space-y-3">
-              {items.map(item => (
-                <div key={item.id} className="flex gap-4 pb-3 border-b border-gray-100 last:border-0">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{item.name}</h3>
-                    <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-                  </div>
-                  <div className="font-semibold text-gray-900">
-                    ${(item.price * item.quantity).toFixed(2)}
-                  </div>
-                </div>
-              ))}
-              <div className="pt-3 flex justify-between text-lg font-bold text-gray-900">
-                <span>Total</span>
-                <span>${calculatedTotal.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Address Form */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <form onSubmit={handleSaveAddress} className="space-y-4">
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Street Address
@@ -188,7 +146,7 @@ export default function AddressPage() {
                   type="submit"
                   className="flex-1 bg-black text-white font-medium py-3 px-6 rounded-lg transition-colors"
                 >
-                  Continue to Payment
+                  Continue to Checkout
                 </button>
               </div>
             </form>

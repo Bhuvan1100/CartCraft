@@ -15,11 +15,11 @@ export const fetchProductsByTags = async () => {
     tags: ['ALL', 'NEW ARRIVALS', 'BEST SELLER', 'TOP RATED'],
   });
 
-  // Shuffle products randomly
+  
   const shuffled = [...products].sort(() => 0.5 - Math.random());
   const totalProducts = shuffled.length;
 
-  // If we have 32 or more products, split into 4 groups of 8
+  
   if (totalProducts >= 32) {
     return {
       ALL: shuffled.slice(0, 8).map(transform),
@@ -29,8 +29,6 @@ export const fetchProductsByTags = async () => {
     };
   }
 
-  // If less than 32, distribute products without repeating
-  // Each category gets a unique subset, some may get fewer than 8 or even 0
   const productsPerCategory = Math.floor(totalProducts / 4);
   const remainder = totalProducts % 4;
 
@@ -39,7 +37,7 @@ export const fetchProductsByTags = async () => {
   const result = {};
 
   categories.forEach((category, i) => {
-    // Distribute remainder to first few categories
+    
     const count = productsPerCategory + (i < remainder ? 1 : 0);
     result[category] = shuffled.slice(index, index + count).map(transform);
     index += count;
@@ -50,7 +48,7 @@ export const fetchProductsByTags = async () => {
 
 export const fetchProductById = async (id) => {
   try {
-    // Fetch product from your backend
+   
     const productRes = await axios.get(
       `http://localhost:4000/product/productdetail/${id}`,
       {
@@ -60,8 +58,8 @@ export const fetchProductById = async (id) => {
     
     const p = productRes.data.product;
 
-    // Calculate original price from discount if available
-    const originalPrice = p.price; // You can add discount logic if needed
+    
+    const originalPrice = p.price; 
     
     return {
       product: {
@@ -75,15 +73,14 @@ export const fetchProductById = async (id) => {
         images: p.images?.map(img => img.url) || [],
         inStock: p.totalQuantity > 0,
         
-        // ✅ ADD THESE FIELDS
         category: p.category,
         subCategory: p.subCategory,
         
-        // Include variants if needed
+        
         variants: p.variants || [],
       },
 
-      // Additional info
+      
       additionalInfo: {
         category: p.category,
         subCategory: p.subCategory,
@@ -93,12 +90,12 @@ export const fetchProductById = async (id) => {
         totalQuantity: p.totalQuantity,
       },
 
-      // Map comments to reviews format
+      
       reviews: (p.comments || []).map((comment, i) => ({
         id: i + 1,
         user: comment.userEmail || `User ${i + 1}`,
         userId: comment.userId,
-        rating: p.avgRating || 4, // Use product's avg rating
+        rating: p.avgRating || 4, 
         comment: comment.comment,
         createdAt: comment.createdAt,
       })),
@@ -136,11 +133,9 @@ export const fetchSimilarProducts = async ({ category, excludeId }) => {
 
 export const fetchProductsByCategory = async (category, subCategory, page = 1) => {
   if (!category || !subCategory) return { products: [], pagination: {} };
-  // console.log(page*page);
+  
   try {
-    // Convert to match Prisma enum format
-    // category: "men" -> "MEN"
-    // subCategory: "kurta" -> "MEN_KURTA"
+    
     const formattedCategory =
       category.toLowerCase() === "mens"
         ? "men"
@@ -149,8 +144,8 @@ export const fetchProductsByCategory = async (category, subCategory, page = 1) =
           : category.toLowerCase() === "kids"
             ? "kids"
             : category.toLowerCase();
-    // "MEN", "WOMEN", "KIDS"
-    const formattedSubCategory = `${subCategory.toLowerCase()}`; // "MEN_KURTA", "WOMEN_SAREE"
+   
+    const formattedSubCategory = `${subCategory.toLowerCase()}`; 
 
     const res = await axios.get(  
       `http://localhost:4000/products/${formattedCategory}/${subCategory}?page=${page}`,
@@ -183,120 +178,47 @@ export const fetchProductsByCategory = async (category, subCategory, page = 1) =
   }
 };
 
-// ✅ NEW FUNCTIONS FOR CART AND ORDERS
 
-/**
- * Fetch cart items for the logged-in user
- * @returns {Promise<Object>} Cart data with items and total price
- */
-export const fetchCartItems = async (email) => {
-  try {
-    const userId = localStorage.getItem('id');
+export const checkoutPreview = async (email) => {
+  const userId = localStorage.getItem('id');
 
-    if (!userId) {
-      console.error('[FETCH_CART_ITEMS] No userId found in localStorage');
-      return {
-        cartId: null,
-        status: null,
-        totalPrice: 0,
-        items: []
-      };
-    }
-
-    console.log('[FETCH_CART_ITEMS] Fetching cart for userId:', userId);
-
-    const response = await axios.post(
-      '/api/buyer/cart/getcart',
-      { userId, email },
-      { withCredentials: true }
-    );
-
-    console.log('[FETCH_CART_ITEMS] Success:', response.data);
-
-    return {
-      cartId: response.data.cartId || null,
-      status: response.data.status || null,
-      totalPrice: response.data.totalPrice || 0,
-      items: response.data.items || []
-    };
-
-  } catch (error) {
-    console.error('[FETCH_CART_ITEMS] Error:', error);
-    return {
-      cartId: null,
-      status: null,
-      totalPrice: 0,
-      items: []
-    };
+  if (!userId) {
+    throw new Error('No userId found');
   }
+
+  const response = await axios.post(
+    '/api/checkout/preview',
+    { userId, email },
+    { withCredentials: true }
+  );
+
+  return response.data; // contains sessionId + product preview data
 };
 
-/**
- * Fetch buyer orders for the logged-in user
- * @returns {Promise<Array>} Array of orders
- */
-export const fetchBuyerOrders = async () => {
-  try {
-    const userId = localStorage.getItem('id');
+export const fillCheckoutDetails = async (address, email) => {
+  const userId = localStorage.getItem('id');
+  const sessionId = sessionStorage.getItem('sessionId');
 
-    if (!userId) {
-      console.error('[FETCH_BUYER_ORDERS] No userId found in localStorage');
-      return [];
-    }
+  if (!userId || !sessionId) throw new Error('Missing userId or sessionId');
 
-    console.log('[FETCH_BUYER_ORDERS] Fetching orders for userId:', userId);
-
-    const response = await axios.post(
-      '/api/buyer/orders',
-      { userId },
-      { withCredentials: true }
-    );
-
-    console.log('[FETCH_BUYER_ORDERS] Success:', response.data);
-
-    return response.data.orders || [];
-
-  } catch (error) {
-    console.error('[FETCH_BUYER_ORDERS] Error:', error);
-    return [];
-  }
-};
-
-/**
- * Main function to fetch all user data (cart + orders) in parallel
- * This is the function you'll call from App.jsx after login confirmation
- * @param {string} email - User's email from UserStore
- * @returns {Promise<Object>} Object containing cart and orders data
- */
-export const fetchUserData = async (email) => {
-  console.log('[FETCH_USER_DATA] Starting parallel fetch of cart and orders...');
-
-  try {
-    // Fetch both cart and orders in parallel for better performance
-    const [cartData, ordersData] = await Promise.all([
-      fetchCartItems(email),
-      fetchBuyerOrders()
-    ]);
-
-    console.log('[FETCH_USER_DATA] ✅ Successfully fetched all user data');
-
-    return {
-      cart: cartData,
-      orders: ordersData
-    };
-
-  } catch (error) {
-    console.error('[FETCH_USER_DATA] ❌ Failed to fetch user data:', error);
-    
-    // Return empty data structure on error
-    return {
-      cart: {
-        cartId: null,
-        status: null,
-        totalPrice: 0,
-        items: []
-      },
-      orders: []
-    };
-  }
+  const response = await axios.post(
+    '/api/checkout/session/details',
+    {
+      sessionId,
+      userId,
+      buyerDetails: {
+        email,
+        address: {
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zipCode: address.zipCode,
+          country: address.country,
+        }
+      }
+    },
+    { withCredentials: true }
+  );
+  console.log(response)
+  return response.data;
 };

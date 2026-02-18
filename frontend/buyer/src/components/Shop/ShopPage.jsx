@@ -98,7 +98,7 @@ const PaginatedGrid = ({ allData = [], pagination = {}, onPageChange, scrollRef,
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6">
+    <div className="w-full max-w-4xl mx-auto p-6">
       <div className="flex justify-end mb-6">
         <div className="relative" ref={dropdownRef}>
           {/* Dropdown Button */}
@@ -134,7 +134,7 @@ const PaginatedGrid = ({ allData = [], pagination = {}, onPageChange, scrollRef,
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-10">
             {sortedData.map((item) => (
               <Link key={item.id} to={`/product/${item.id}`} className="block">
                 <ProductCard

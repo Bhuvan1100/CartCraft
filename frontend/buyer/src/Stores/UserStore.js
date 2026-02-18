@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { fetchUserData as fetchUserDataFromAPI } from './Data';
 import axios from 'axios';
 
 const DUMMY_API_BASE = "https://dummyjson.com";
@@ -29,6 +28,7 @@ const useUserStore = create((set, get) => ({
   // --------------------
   cartData: null,
   cartItems: [],
+  authChecked: false,
   cartTotalPrice: 0,
   cartId: null,
   cartStatus: null,
@@ -52,56 +52,13 @@ const useUserStore = create((set, get) => ({
       isLoggedIn: status,
       email: status ? email || state.email : "",
       isVerified: status ? isVerified : false,
+      authChecked: true,
     }));
   },
 
   // --------------------
   // FETCH USER DATA (CART + ORDERS) - NEW
   // --------------------
-  fetchUserData: async () => {
-    const userId = localStorage.getItem('id');
-    const { email } = get(); // Get email from store
-
-    if (!userId) {
-      console.error('[USER_STORE] No userId found in localStorage');
-      return;
-    }
-
-    console.log('[USER_STORE] Starting data fetch for userId:', userId);
-    set({ isLoadingUserData: true });
-
-    try {
-      // Call the fetchUserData function from Data.js and pass email
-      const userData = await fetchUserDataFromAPI(email);
-
-      console.log('[USER_STORE] Received user data:', userData);
-
-      // Update store with fetched data
-      set({
-        // Cart data
-        cartData: userData.cart,
-        cartItems: userData.cart.items || [],
-        cartTotalPrice: userData.cart.totalPrice || 0,
-        cartId: userData.cart.cartId || null,
-        cartStatus: userData.cart.status || null,
-        
-        // Orders data
-        orders: userData.orders || [],
-        
-        // Loading states
-        isLoadingUserData: false,
-        userDataLoaded: true,
-      });
-
-      console.log('[USER_STORE] ✅ Successfully loaded user data into store');
-    } catch (error) {
-      console.error('[USER_STORE] ❌ Failed to fetch user data:', error);
-      set({
-        isLoadingUserData: false,
-        userDataLoaded: false,
-      });
-    }
-  },
 
   // --------------------
   // UPDATE CART DATA LOCALLY (NEW)
@@ -164,10 +121,9 @@ const useUserStore = create((set, get) => ({
   // --------------------
   addItemToCart: (newItem) => {
     const currentItems = get().cartItems || [];
-    
-    // Check if item already exists (same productId + productVariantId)
+
     const existingItemIndex = currentItems.findIndex(
-      item => item.productId === newItem.productId && 
+      item => item.productId === newItem.productId &&
               item.productVariantId === newItem.productVariantId
     );
 
@@ -175,34 +131,21 @@ const useUserStore = create((set, get) => ({
     let updatedTotalPrice = get().cartTotalPrice || 0;
 
     if (existingItemIndex !== -1) {
-      // Item exists, update quantity
       updatedItems = currentItems.map((item, index) => {
         if (index === existingItemIndex) {
           const newQuantity = item.quantity + newItem.quantity;
           const newTotalPrice = newItem.priceSnapshot * newQuantity;
-          
-          // Update total price
           updatedTotalPrice = updatedTotalPrice - item.totalPrice + newTotalPrice;
-          
-          return {
-            ...item,
-            quantity: newQuantity,
-            totalPrice: newTotalPrice
-          };
+          return { ...item, quantity: newQuantity, totalPrice: newTotalPrice };
         }
         return item;
       });
     } else {
-      // New item, add to array
       updatedItems = [...currentItems, newItem];
       updatedTotalPrice += newItem.totalPrice;
     }
 
-    set({
-      cartItems: updatedItems,
-      cartTotalPrice: updatedTotalPrice
-    });
-
+    set({ cartItems: updatedItems, cartTotalPrice: updatedTotalPrice });
     console.log('[USER_STORE] ✅ Cart item added locally:', newItem);
   },
 
@@ -274,25 +217,72 @@ const useUserStore = create((set, get) => ({
     }
   },
 
+  // --------------------
+  // FETCH CURRENT ORDERS (UPDATED - axios + /api prefix)
+  // --------------------
   fetchCurrentOrders: async () => {
     try {
       set({ isLoading: true, error: null });
 
-      const res = await fetch(`${DUMMY_API_BASE}/carts/2`);
-      const data = await res.json();
+      const userId = localStorage.getItem('id');
 
-      set({
-        currentOrders: data.products.map((p) => ({
-          id: p.id,
-          title: p.title,
-          price: p.price,
-          quantity: p.quantity,
-          total: p.total,
-          status: "IN_TRANSIT",
-        })),
+      if (!userId) {
+        console.error('[FETCH_CURRENT_ORDERS] No userId found in localStorage');
+        return;
+      }
+
+      const response = await axios.post(
+        '/api/buyer/orders',
+        { userId },
+        { withCredentials: true }
+      );
+
+      const data = response.data;
+
+      const mapped = data.orders.map((order) => {
+        const billing = order.billingSnapshot ?? {};
+        const address = order.addressSnapshot ?? {};
+
+        const totalQuantity = order.items?.reduce(
+          (sum, item) => sum + item.quantity, 0
+        ) ?? 0;
+
+        const totalAmount = billing.total ?? 0;
+
+        return {
+          orderId:      order.orderId,
+          status:       order.status,
+          purchasedAt:  order.purchasedAt,
+          updatedAt:    order.updatedAt,
+          totalAmount:  Number(totalAmount),
+          city:         address.city    ?? null,
+          state:        address.state   ?? null,
+          pincode:      address.pincode ?? null,
+          line1:        address.line1   ?? null,
+          totalQuantity,
+          itemCount:    order.items?.length ?? 0,
+
+          items: (order.items ?? []).map((item) => {
+            console.log("item", item); // 👈 check console to find price key
+            return {
+              productId:        item.productId,
+              productVariantId: item.productVariantId,
+              size:             item.size,
+              quantity:         item.quantity,
+              title:            item.titleSnapshot ?? null,
+              price:            Number(item.priceSnapshot ?? 0),
+              lineTotal:        Number(item.priceSnapshot ?? 0) * item.quantity,
+            };
+          }),
+        };
       });
+
+      set({ currentOrders: mapped });
+      console.log('[FETCH_CURRENT_ORDERS] ✅ Orders loaded:', mapped.length);
+
     } catch (err) {
       set({ error: "Failed to fetch current orders" });
+      console.error('[FETCH_CURRENT_ORDERS] ❌', err.response?.data ?? err.message);
     } finally {
       set({ isLoading: false });
     }
@@ -314,15 +304,12 @@ const useUserStore = create((set, get) => ({
       },
       previousOrders: [],
       currentOrders: [],
-      
-      // Clear new cart and orders data
       cartData: null,
       cartItems: [],
       cartTotalPrice: 0,
       cartId: null,
       cartStatus: null,
       orders: [],
-      
       isLoadingUserData: false,
       userDataLoaded: false,
       error: null,

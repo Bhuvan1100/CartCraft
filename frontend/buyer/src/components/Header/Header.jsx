@@ -7,7 +7,8 @@ import {
 import SearchBar from "../SearchBar/SearchBar";
 import { auth } from '../../Firebase/firebase';
 import { Link, useNavigate } from "react-router-dom";
-import useCartStore from "../../Stores/ProductStore";
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
 
 /* ===== DO NOT CHANGE (AS REQUESTED) ===== */
 const IconButtonLight = ({ children, onClick }) => (
@@ -37,9 +38,38 @@ const Header = () => {
     const navigate = useNavigate();
     const menuRef = useRef(null);
     const user = auth.currentUser;
-    const { items, clearCart, totalItems, totalPrice } = useCartStore();
 
     const isAuthenticated = (user && user.emailVerified);
+
+    // ✅ FETCH CART COUNT WITH TANSTACK QUERY
+    const { data: cartData } = useQuery({
+        queryKey: ['cart'],
+        queryFn: async () => {
+            const userId = localStorage.getItem('id');
+            const email = user?.email;
+
+            if (!userId || !email) {
+                return { items: [] };
+            }
+
+            try {
+                const response = await axios.post(
+                    '/api/buyer/cart/getcart',
+                    { userId, email },
+                    { withCredentials: true }
+                );
+                return response.data;
+            } catch (error) {
+                console.error('Failed to fetch cart:', error);
+                return { items: [] };
+            }
+        },
+        enabled: !!user && !!user.emailVerified, // Only fetch if logged in and verified
+        staleTime: 30000, // Cache for 30 seconds
+        refetchOnWindowFocus: false, // Don't refetch on every window focus
+    });
+
+    const totalItems = cartData?.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
 
     const handleUserIconClick = () => {
         setUserMenuOpen(!userMenuOpen);
@@ -164,13 +194,13 @@ const Header = () => {
                         <IconButtonLight onClick={() => navigate("/cart")}>
                             <div className="relative cursor-pointer">
                                 <ShoppingCartIcon className="h-6 w-6" />
-                                <span className="absolute  -top-2 -right-2 bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                                    {totalItems()}
-                                </span>
+                                {totalItems > 0 && (
+                                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                                        {totalItems}
+                                    </span>
+                                )}
                             </div>
                         </IconButtonLight>
-
-                        {/* Dark/Light toggle removed */}
                     </div>
                 </div>
             </header>

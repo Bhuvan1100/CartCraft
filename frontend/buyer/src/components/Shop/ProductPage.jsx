@@ -11,6 +11,7 @@ import { fetchProductById } from '../../Stores/Data';
 import { useQuery } from '@tanstack/react-query';
 import useCartStore from '../../Stores/ProductStore';
 import useUserStore from '../../Stores/UserStore';
+import { useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 export default function ProductPage() {
@@ -22,6 +23,7 @@ export default function ProductPage() {
   const isLoggedIn = useUserStore(state => state.isLoggedIn);
   const isVerified = useUserStore(state => state.isVerified);
   const email = useUserStore(state => state.email);
+  const queryClient = useQueryClient();
 
   const {
     items,
@@ -94,11 +96,15 @@ export default function ProductPage() {
   const { product, additionalInfo, reviews, category } = data;
 
   const handleQuantityChange = (type) => {
-    if (quantity === 10 && type === 'increase') {
-      toast.info("Cannot buy more than 10 same item in one time", {
-        style: {
-          fontSize: "15px",
-        },
+    const availableStock = selectedVariant
+      ? selectedVariant.availableQuantity
+      : data?.additionalInfo?.totalQuantity ?? 10;
+
+    const maxAllowed = Math.min(availableStock, 10);
+
+    if (quantity >= maxAllowed && type === 'increase') {
+      toast.info(`Cannot add more than ${maxAllowed} of this item`, {
+        style: { fontSize: "15px" },
       });
       return;
     }
@@ -179,27 +185,8 @@ export default function ProductPage() {
         return;
       }
 
-      // ✅ UPDATE USERSTORE WITH NEW CART ITEM
-      useUserStore.getState().addItemToCart({
-        id: response.data.cartItemId || `temp_${Date.now()}`, // Use backend ID if available
-        productId: product.id,
-        productVariantId: selectedVariant ? selectedVariant.id : null,
-        size: selectedVariant ? selectedVariant.size : null,
-        quantity: quantity,
-        priceSnapshot: selectedVariant ? selectedVariant.price : product.price,
-        totalPrice: (selectedVariant ? selectedVariant.price : product.price) * quantity
-      });
+      queryClient.invalidateQueries(['cart']);
 
-      // Also add to local CartStore for UI consistency (optional, can remove if not needed)
-      addItem({
-        id: product.id,
-        name: product.name,
-        price: selectedVariant ? selectedVariant.price : product.price,
-        image: product.images[0],
-        quantity: quantity,
-        size: selectedVariant ? selectedVariant.size : null,
-        variantId: selectedVariant ? selectedVariant.id : null,
-      });
 
       toast(
         <div className="flex items-center justify-between gap-4 mt-3 w-full px-5 py-3 bg-white border border-gray-200 rounded-md shadow-md">
