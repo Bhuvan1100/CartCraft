@@ -150,8 +150,8 @@ export default function CurrentOrdersPage() {
               You have no orders in transit at the moment.
             </p>
             <Link
-              to="/shop"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              to="/"
+              className="inline-flex items-center px-6 py-3 bg-black text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Start Shopping
             </Link>

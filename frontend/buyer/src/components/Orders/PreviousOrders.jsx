@@ -42,7 +42,13 @@ export default function PreviousOrdersPage() {
     );
   }
 
-  if (!previousOrders || previousOrders.length === 0) {
+  const filteredOrders = (previousOrders ?? []).filter((order) => {
+    if (order.status !== "DELIVERED") return true;
+    const daysSinceDelivery = (Date.now() - new Date(order.updatedAt)) / (1000 * 60 * 60 * 24);
+    return daysSinceDelivery > 5;
+  });
+
+  if (filteredOrders.length === 0) {
     return (
       <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
@@ -51,10 +57,10 @@ export default function PreviousOrdersPage() {
               <ShoppingBagIcon className="w-12 h-12 text-slate-400" />
             </div>
             <h1 className="text-3xl font-bold text-slate-900 mb-4">Previous Orders</h1>
-            <p className="text-slate-600 text-lg mb-8">You have not made any orders yet.</p>
+            <p className="text-slate-600 text-lg mb-8">No completed orders yet.</p>
             <Link
-              to="/shop"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              to="/"
+              className="inline-flex items-center px-6 py-3 bg-black text-white font-semibold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
             >
               Start Shopping
             </Link>
@@ -73,7 +79,7 @@ export default function PreviousOrdersPage() {
         </div>
 
         <div className="space-y-4">
-          {previousOrders.map((order) => (
+          {filteredOrders.map((order) => (
             <div
               key={order.id}
               onClick={() => navigate(`/product/${order.id}`)}

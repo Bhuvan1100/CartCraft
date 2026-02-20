@@ -155,11 +155,12 @@ export default function ShoppingCart() {
 
   useEffect(() => {
     if (!authChecked) return; 
-
+    console.log(isLoggedIn);
+    console.log(isVerified);
     if (!isLoggedIn) {
-      navigate("/login", { replace: true });
+      navigate("/login");
     } else if (!isVerified) {
-      navigate("/verify-email", { replace: true });
+      navigate("/verify-email");
     }
   }, [isLoggedIn, isVerified, authChecked, navigate]);
 

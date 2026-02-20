@@ -180,7 +180,7 @@ const Header = () => {
                                                 Your Details
                                             </button>
                                             <button
-                                                onClick={() => { /* Add logout logic */ setUserMenuOpen(false); }}
+                                                onClick={() => {navigate("/logout")}}
                                                 className="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-100"
                                             >
                                                 Logout

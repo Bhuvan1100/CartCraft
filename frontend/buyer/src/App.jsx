@@ -26,6 +26,7 @@ import AddressPage from './components/Cart/AddressPage';
 import PaymentPage from './components/Cart/PaymentPage';
 import axios from 'axios'
 import ConfirmCart from './components/Cart/ConfirmCart';
+import LogoutPage from './components/Logout/Logout';
 
 function App() {
 
@@ -63,41 +64,40 @@ function App() {
 
             localStorage.setItem("id", backendUser.userId);
             console.log("🆔 Stored userId in localStorage:", backendUser.userId);
-            
 
-            useUserStore.getState().setLoginStatus(
-              true,
-              user.email,
-              user.emailVerified=true
-            );
-
+            useUserStore.setState({
+              isLoggedIn: true,
+              email: user.email,
+              isVerified: true,
+              authChecked: true,
+            });
+            const is = useUserStore.getState().isVerified;
+            console.log(is);
             console.log("🟢 Login status set TRUE");
-            
-            // Fetch user data (cart + orders) after successful login
+
             console.log("📦 Fetching user data (cart & orders)...");
-            
+
             retryRef.current = false;
 
           } else {
 
             console.log("⚠️ Backend says NOT authenticated");
 
-            // 🟢 Case: Email not verified → do NOT logout
             if (!user.emailVerified) {
 
-              console.log("📩 Email not verified. Keeping user logged in.");
+              console.log("📩 Email not verified & backend failed. NOT logging out.");
 
-              useUserStore.getState().setLoginStatus(
-                true,
-                user.email,
-                false
-              );
+              useUserStore.setState({
+                isLoggedIn: true,
+                email: user.email,
+                isVerified: false,
+                authChecked: true,
+              });
 
               setAuthLoading(false);
               return;
             }
-
-            // 🔁 Retry once
+            
             if (user && !retryRef.current) {
 
               console.log("🔁 Retrying backend verification once...");
@@ -116,16 +116,16 @@ function App() {
 
           console.error("🔥 Backend verification ERROR:", error);
 
-          // 🟢 If email not verified → DO NOT logout
           if (!user.emailVerified) {
 
-            console.log("📩 Email not verified & backend failed. NOT logging out.");
+            console.log("📩 Email not verified. Keeping user logged in.");
 
-            useUserStore.getState().setLoginStatus(
-              true,
-              user.email,
-              false
-            );
+            useUserStore.setState({
+              isLoggedIn: true,
+              email: user.email,
+              isVerified: false,
+              authChecked: true,
+            });
 
             setAuthLoading(false);
             return;
@@ -153,10 +153,14 @@ function App() {
       };
 
       if (!user) {
-
         console.log("🚪 No Firebase user found. Setting login false.");
+        useUserStore.setState({
+          isLoggedIn: false,
+          email: "",
+          isVerified: false,
+          authChecked: true,
+        });
 
-        useUserStore.getState().setLoginStatus(false, null, false);
         setAuthLoading(false);
 
       } else {
@@ -208,6 +212,7 @@ function App() {
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/previous-orders" element={<PreviousOrdersPage />} />
           <Route path="/current-orders" element={<CurrentOrdersPage />} />
+          <Route path="/logout" element={<LogoutPage />} />
         </Routes>
         <Footer />
       </BrowserRouter>

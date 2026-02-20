@@ -1,21 +1,13 @@
 import { create } from "zustand";
 import axios from 'axios';
 
-const DUMMY_API_BASE = "https://dummyjson.com";
-
 const useUserStore = create((set, get) => ({
   // --------------------
   // CORE USER DATA
   // --------------------
-  email: "", // backend provides email
-  isLoggedIn: false, // true if user logged in, false otherwise
-  isVerified: false, // email verification status
-  address: {
-    addressLine1: "",
-    addressLine2: "",
-    pincode: "",
-    phone: "",
-  },
+  email: "",
+  isLoggedIn: false,
+  isVerified: false,
 
   previousOrders: [],
   currentOrders: [],
@@ -24,7 +16,7 @@ const useUserStore = create((set, get) => ({
   error: null,
 
   // --------------------
-  // CART DATA (NEW)
+  // CART DATA
   // --------------------
   cartData: null,
   cartItems: [],
@@ -34,12 +26,12 @@ const useUserStore = create((set, get) => ({
   cartStatus: null,
 
   // --------------------
-  // ORDERS DATA (NEW)
+  // ORDERS DATA
   // --------------------
   orders: [],
 
   // --------------------
-  // LOADING STATES (NEW)
+  // LOADING STATES
   // --------------------
   isLoadingUserData: false,
   userDataLoaded: false,
@@ -47,21 +39,16 @@ const useUserStore = create((set, get) => ({
   // --------------------
   // AUTH / LOGIN STATE
   // --------------------
-  setLoginStatus: (status, email = null, isVerified = false) => {
+  setLoginStatus: (status, email = null, isVerified = get().isVerified) => {
     set((state) => ({
       isLoggedIn: status,
       email: status ? email || state.email : "",
       isVerified: status ? isVerified : false,
-      authChecked: true,
     }));
   },
 
   // --------------------
-  // FETCH USER DATA (CART + ORDERS) - NEW
-  // --------------------
-
-  // --------------------
-  // UPDATE CART DATA LOCALLY (NEW)
+  // UPDATE CART DATA LOCALLY
   // --------------------
   updateCartData: (cartData) => {
     set({
@@ -74,14 +61,14 @@ const useUserStore = create((set, get) => ({
   },
 
   // --------------------
-  // UPDATE ORDERS LOCALLY (NEW)
+  // UPDATE ORDERS LOCALLY
   // --------------------
   updateOrders: (orders) => {
     set({ orders });
   },
 
   // --------------------
-  // REFETCH CART ONLY (NEW)
+  // REFETCH CART ONLY
   // --------------------
   refetchCart: async () => {
     const userId = localStorage.getItem('id');
@@ -150,75 +137,81 @@ const useUserStore = create((set, get) => ({
   },
 
   // --------------------
-  // ADDRESS
-  // --------------------
-  fetchUserAddress: async () => {
-    try {
-      set({ isLoading: true, error: null });
-
-      const res = await fetch(`${DUMMY_API_BASE}/users/1`);
-      const data = await res.json();
-
-      set({
-        email: data.email || "",
-        isLoggedIn: !!data.email,
-        address: {
-          streetAddress: data.address?.address || "123 Main St",
-          city: data.address?.city || "New York",
-          state: data.address?.state || "NY",
-          zipCode: data.address?.postalCode || "10001",
-          country: data.address?.country || "USA",
-          phone: data.phone || "",
-        },
-      });
-    } catch (err) {
-      set({ error: "Failed to fetch user address" });
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  addAddress: (newAddress) => {
-    set({
-      address: {
-        streetAddress: newAddress.streetAddress || "",
-        city: newAddress.city || "",
-        state: newAddress.state || "",
-        zipCode: newAddress.zipCode || "",
-        country: newAddress.country || "",
-      },
-    });
-  },
-
-  // --------------------
-  // ORDERS (DUMMY API - OLD)
+  // FETCH PREVIOUS ORDERS (same API as current, filters DELIVERED > 5 days)
   // --------------------
   fetchPreviousOrders: async () => {
     try {
       set({ isLoading: true, error: null });
 
-      const res = await fetch(`${DUMMY_API_BASE}/carts/1`);
-      const data = await res.json();
+      const userId = localStorage.getItem('id');
 
-      set({
-        previousOrders: data.products.map((p) => ({
-          id: p.id,
-          title: p.title,
-          price: p.price,
-          quantity: p.quantity,
-          total: p.total,
-          status: "DELIVERED",
-        })),
-      });
+      if (!userId) {
+        console.error('[FETCH_PREVIOUS_ORDERS] No userId found in localStorage');
+        return;
+      }
+
+      const response = await axios.post(
+        '/api/buyer/orders',
+        { userId },
+        { withCredentials: true }
+      );
+
+      const data = response.data;
+
+      const mapped = data.orders
+        .filter((order) => {
+          if (order.status !== 'DELIVERED') return false;
+          const daysSinceDelivery = (Date.now() - new Date(order.updatedAt)) / (1000 * 60 * 60 * 24);
+          return daysSinceDelivery > 5;
+        })
+        .map((order) => {
+          const billing = order.billingSnapshot ?? {};
+          const address = order.addressSnapshot ?? {};
+
+          const totalQuantity = order.items?.reduce(
+            (sum, item) => sum + item.quantity, 0
+          ) ?? 0;
+
+          const totalAmount = billing.total ?? 0;
+
+          return {
+            orderId:      order.orderId,
+            status:       order.status,
+            purchasedAt:  order.purchasedAt,
+            updatedAt:    order.updatedAt,
+            totalAmount:  Number(totalAmount),
+            city:         address.city    ?? null,
+            state:        address.state   ?? null,
+            pincode:      address.pincode ?? null,
+            line1:        address.line1   ?? null,
+            totalQuantity,
+            itemCount:    order.items?.length ?? 0,
+
+            items: (order.items ?? []).map((item) => ({
+              productId:        item.productId,
+              productVariantId: item.productVariantId,
+              size:             item.size,
+              quantity:         item.quantity,
+              title:            item.titleSnapshot ?? null,
+              price:            Number(item.priceSnapshot ?? 0),
+              lineTotal:        Number(item.priceSnapshot ?? 0) * item.quantity,
+            })),
+          };
+        });
+
+      set({ previousOrders: mapped });
+      console.log('[FETCH_PREVIOUS_ORDERS] ✅ Orders loaded:', mapped.length);
+
     } catch (err) {
       set({ error: "Failed to fetch previous orders" });
+      console.error('[FETCH_PREVIOUS_ORDERS] ❌', err.response?.data ?? err.message);
     } finally {
       set({ isLoading: false });
     }
   },
 
   // --------------------
-  // FETCH CURRENT ORDERS (UPDATED - axios + /api prefix)
+  // FETCH CURRENT ORDERS
   // --------------------
   fetchCurrentOrders: async () => {
     try {
@@ -263,7 +256,7 @@ const useUserStore = create((set, get) => ({
           itemCount:    order.items?.length ?? 0,
 
           items: (order.items ?? []).map((item) => {
-            console.log("item", item); // 👈 check console to find price key
+            console.log("item", item);
             return {
               productId:        item.productId,
               productVariantId: item.productVariantId,
@@ -296,12 +289,6 @@ const useUserStore = create((set, get) => ({
       email: "",
       isLoggedIn: false,
       isVerified: false,
-      address: {
-        addressLine1: "",
-        addressLine2: "",
-        pincode: "",
-        phone: "",
-      },
       previousOrders: [],
       currentOrders: [],
       cartData: null,

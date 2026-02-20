@@ -27,7 +27,7 @@ export default function LoginPage() {
   });
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const { isLoggedIn, setLoginStatus } = useUserStore();
+  const { isLoggedIn } = useUserStore();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -62,7 +62,6 @@ export default function LoginPage() {
     }
   };
 
-  // 🔥 NEW: Backend login function
   const backendLogin = async (firebaseUser) => {
     try {
       const response = await axios.post(
@@ -75,10 +74,15 @@ export default function LoginPage() {
         throw new Error("Invalid backend response");
       }
 
-      // Store as "Id" (capital I key)
       localStorage.setItem("id", response.data.id);
 
-      setLoginStatus(true, firebaseUser.email);
+      useUserStore.setState({
+        isLoggedIn: true,
+        email: firebaseUser.email,
+        isVerified: true,
+        authChecked: true,
+      });
+
       setSuccessMessage(`Signed in successfully.`);
 
       setTimeout(() => {
@@ -87,6 +91,13 @@ export default function LoginPage() {
 
     } catch (error) {
       await signOut(auth);
+
+      useUserStore.setState({
+        isLoggedIn: false,
+        email: "",
+        isVerified: false,
+        authChecked: true,
+      });
 
       const message =
         error.response?.data?.message ||
@@ -245,7 +256,6 @@ export default function LoginPage() {
               </svg>
               Sign in with Google
             </button>
-
 
             <p className={`text-sm mt-4 text-center ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Don't have an account?{' '}

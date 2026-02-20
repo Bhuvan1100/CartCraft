@@ -18,7 +18,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     // Redirect to home if user is already verified
-    if (user && user.emailVerified) {
+    if (user && useUserStore.getState().isVerified) {
       navigate('/');
     }
   }, []);
@@ -80,11 +80,15 @@ export default function VerifyEmailPage() {
           { withCredentials: true }
         );
 
-        // ✅ Backend success - store ID and navigate
         localStorage.setItem("id", response.data.id);
         console.log('User verified and registered in backend successfully!');
         setSuccessMessage('Email verified successfully! Redirecting...');
-        useUserStore.getState().setLoginStatus(true, user.email);
+        useUserStore.setState({
+          isLoggedIn: true,
+          email: user.email,
+          isVerified: true,
+          authChecked: true,
+        });
         setTimeout(() => {
           navigate('/');
         }, 1500);
@@ -95,6 +99,12 @@ export default function VerifyEmailPage() {
         // ❌ Backend failed - delete Firebase user to force re-signup
         try {
           await user.delete();
+          useUserStore.setState({
+            isLoggedIn: false,
+            email: "",
+            isVerified: false,
+            authChecked: true,
+          });
           setErrors({
             general: 'Server error occurred. Your account has been removed. Please try signing up again in a few moments.'
           });
@@ -108,6 +118,12 @@ export default function VerifyEmailPage() {
           console.error('Error deleting user:', deleteError);
           // Fallback: sign out if delete fails
           await auth.signOut();
+          useUserStore.setState({
+            isLoggedIn: false,
+            email: "",
+            isVerified: false,
+            authChecked: true,
+          });
           setErrors({
             general: 'Server error occurred. Please try signing up again after some time.'
           });
